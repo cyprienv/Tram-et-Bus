@@ -29,7 +29,7 @@
 </head>
 <body>
 <header>
-  <span id="status">Initialisation…</span>
+  <span id="status">Chargement en cours…</span>
   <span id="clock"></span>
 </header>
 <main id="board"></main>
@@ -43,8 +43,8 @@ const STOPS = [
 
 const REFRESH_SECONDS = 30;
 const MAX_ROWS = 4;
-// Utilisation d'un proxy alternatif plus stable pour s'affranchir des restrictions CORS du navigateur
-const API = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://open.tan.fr/ewp/tempsattente.json/");
+// Utilisation d'un proxy alternatif robuste (CodeTabs)
+const API = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent("https://open.tan.fr/ewp/tempsattente.json/");
 
 const board = document.getElementById("board");
 const statusEl = document.getElementById("status");
@@ -73,7 +73,7 @@ function filterPassages(list, stop) {
 function renderCard(stop, passages, error) {
   let content = "";
   if (error) {
-    content = `<div class="err">Impossible de joindre l'API TAN</div>`;
+    content = `<div class="err">Données indisponibles</div>`;
   } else if (passages.length === 0) {
     content = `<div class="empty">Aucun passage trouvé</div>`;
   } else {
@@ -98,16 +98,15 @@ function renderCard(stop, passages, error) {
 async function refresh() {
   let hasError = false;
   const cacheData = {};
-
-  // Récupération groupée des codes uniques (WATT et VGACH)
   const uniqueCodes = [...new Set(STOPS.map(s => s.code))];
 
   await Promise.all(uniqueCodes.map(async code => {
     try {
       const res = await fetch(API + code, { cache: "no-store" });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("HTTP " + res.status);
       cacheData[code] = await res.json();
     } catch (err) {
+      console.error("Erreur pour l'arrêt " + code, err);
       hasError = true;
       cacheData[code] = null;
     }
@@ -122,7 +121,7 @@ async function refresh() {
 
   const now = new Date();
   statusEl.textContent = hasError 
-    ? "Mode dégradé (problème réseau/proxy)" 
+    ? "Erreur de chargement — nouvel essai…" 
     : "Mis à jour à " + now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
