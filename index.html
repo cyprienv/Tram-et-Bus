@@ -35,21 +35,16 @@
 <main id="board"></main>
 
 <script>
-/* ============ CONFIGURATION ============
-   Réseau : TAN (Nantes) via open.tan.fr.
-   - code     : code de l'arrêt TAN
-   - lignes   : lignes à garder, ex. ["2"] → null = toutes
-   - terminus : mot-clé de la direction, ex. "Orvault" → null = aucune
-   - sens     : 1 ou 2 si besoin de forcer (sinon null)
-*/
+/* ============ CONFIGURATION ============ */
 const STOPS = [
-  { name: "Wattignies",    code: "WATT",  lignes: ["2"], terminus: "Orvault",     sens: null, label: "Ligne 2 → Orvault" },
-  { name: "Wattignies",    code: "WATT",  lignes: ["3"], terminus: "Marcel", sens: null, label: "Ligne 3 → Marcel Paul" },
-  { name: "Vincent Gâche", code: "VGACH", lignes: ["5"], terminus: "Gare",        sens: null, label: "Ligne 5 → Gare Sud" }
+  { name: "Wattignies",    code: "WATT",  lignes: ["2"], terminus: "Orvault", sens: null, label: "Ligne 2 → Orvault Grand Val" },
+  { name: "Wattignies",    code: "WATT",  lignes: ["3"], terminus: "Marcel",  sens: null, label: "Ligne 3 → Marcel Paul" },
+  { name: "Vincent Gâche", code: "VGACH", lignes: ["5"], terminus: "Gare",    sens: null, label: "Ligne 5 → Gare Sud" }
 ];
 const REFRESH_SECONDS = 30;
 const MAX_ROWS = 4;
-const API = "https://open.tan.fr/ewp/tempsattente.json/";
+// Utilisation d'un proxy pour contourner la restriction CORS du navigateur
+const API = "https://corsproxy.io/?https://open.tan.fr/ewp/tempsattente.json/";
 /* ======================================= */
 
 const board = document.getElementById("board");
@@ -61,7 +56,6 @@ function parseMinutes(t) {
   if (s.includes("proche")) return 0;
   const m = s.match(/(\d+)/);
   if (!m) return null;
-  // Format "12:34" = heure fixe, "5mn" = minutes
   if (s.includes(":") || s.includes("h")) return null;
   return parseInt(m[1], 10);
 }
