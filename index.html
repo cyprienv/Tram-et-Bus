@@ -55,7 +55,7 @@
 
     .card-l2 { border-left-color: #e30613; }
     .card-l3 { border-left-color: #009ee0; }
-    .card-l5 { border-left-color: #02CCFC; }
+    .card-l5 { border-left-color: #00d2ff; }
 
     .card-header {
       display: flex;
@@ -84,8 +84,7 @@
 
     .badge-l2 { background-color: #e30613; }
     .badge-l3 { background-color: #009ee0; }
-    /* Ligne 5 modifiée : fond bleu clair, texte en blanc */
-    .badge-l5 { background-color: #02CCFC; color: #ffffff; }
+    .badge-l5 { background-color: #009ee0; color: #ffffff; }
 
     .destination-details {
       display: flex;
@@ -370,11 +369,11 @@
 
     async function fetchStopData(key, config) {
       const targetUrl = `https://open.tan.fr/ewp/tempsattente.json/${config.stopCode}`;
-      const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
 
       try {
         const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
 
         const data = await response.json();
         const now = new Date();
@@ -409,7 +408,7 @@
           };
         }).filter(Boolean).sort((a, b) => a.minutesLeft - b.minutesLeft);
 
-        if (arrivals.length === 0) throw new Error("Format vide ou ligne absente");
+        if (arrivals.length === 0) throw new Error("Aucun passage trouvé");
 
         updateCardUI(key, arrivals[0], arrivals[1], false);
 
