@@ -1,369 +1,493 @@
-body {
-  background-color: #0b0f19;
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  overflow: hidden;
-}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panneau Temps Réel Naolib - Nest Hub</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-/* En-tête globale */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #161f30;
-  padding: 6px 14px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  border: 1px solid #233047;
-}
+    body {
+      background-color: #0b0f19;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      overflow: hidden;
+    }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
+    /* Grille principale : Trams en haut (2 cols), Busway en bas (1 col) */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      flex: 1;
+      height: 100%;
+    }
 
-.brand-dot {
-  width: 10px;
-  height: 10px;
-  background-color: #10b981;
-  border-radius: 50%;
-  box-shadow: 0 0 8px #10b981;
-}
+    .card-tram-l2 {
+      grid-column: 1 / 2;
+      grid-row: 1 / 2;
+    }
 
-.clock {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #ffde00;
-  font-variant-numeric: tabular-nums;
-}
+    .card-tram-l3 {
+      grid-column: 2 / 3;
+      grid-row: 1 / 2;
+    }
 
-/* Grille principale : Trams en haut (2 cols), Busway en bas (1 col) */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 10px;
-  flex: 1;
-}
+    .card-bus-l5 {
+      grid-column: 1 / 3;
+      grid-row: 2 / 3;
+    }
 
-.card-tram-l2 {
-  grid-column: 1 / 2;
-  grid-row: 1 / 2;
-}
+    /* Style général des cartes d'arrêt */
+    .transit-card {
+      background-color: #141c2e;
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-left: 8px solid #555;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
 
-.card-tram-l3 {
-  grid-column: 2 / 3;
-  grid-row: 1 / 2;
-}
+    .card-l2 { border-left-color: #e30613; }
+    .card-l3 { border-left-color: #009ee0; }
+    .card-l5 { border-left-color: #00d2ff; }
 
-.card-bus-l5 {
-  grid-column: 1 / 3;
-  grid-row: 2 / 3;
-}
+    /* En-tête de la ligne */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-/* Style général des cartes d'arrêt */
-.transit-card {
-  background-color: #141c2e;
-  border-radius: 12px;
-  padding: 10px 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border-left: 8px solid #555;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  position: relative;
-}
+    .line-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-.card-l2 { border-left-color: #e30613; }
-.card-l3 { border-left-color: #009ee0; }
-.card-l5 { border-left-color: #00d2ff; }
+    .badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.6rem;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
 
-/* En-tête de la ligne */
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+    .badge-l2 { background-color: #e30613; }
+    .badge-l3 { background-color: #009ee0; }
+    .badge-l5 { background-color: #00d2ff; color: #000; }
 
-.line-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+    .destination-details {
+      display: flex;
+      flex-direction: column;
+    }
 
-.badge {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-size: 1.5rem;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
+    .destination-name {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
 
-.badge-l2 { background-color: #e30613; }
-.badge-l3 { background-color: #009ee0; }
-.badge-l5 { background-color: #00d2ff; color: #000; }
+    .stop-point {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
 
-.destination-details {
-  display: flex;
-  flex-direction: column;
-}
+    /* Affichage du style SIEL */
+    .siel-display {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      background-color: #090d16;
+      border-radius: 8px;
+      padding: 6px 14px;
+      border: 1px solid #1e293b;
+      margin-top: 4px;
+      flex: 1;
+      min-height: 90px;
+    }
 
-.destination-name {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
+    /* Second passage (à gauche, petit, blanc) */
+    .passage-secondary {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 80px;
+    }
 
-.stop-point {
-  font-size: 0.8rem;
-  color: #94a3b8;
-}
+    .passage-label {
+      font-size: 0.72rem;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
 
-/* Affichage du style SIEL */
-.siel-display {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  background-color: #090d16;
-  border-radius: 8px;
-  padding: 6px 14px;
-  border: 1px solid #1e293b;
-  margin-top: 4px;
-  flex: 1;
-  min-height: 85px;
-}
+    .secondary-time {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1;
+    }
 
-/* Second passage (à gauche, petit, blanc) */
-.passage-secondary {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 75px;
-}
+    .secondary-unit {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
 
-.passage-label {
-  font-size: 0.72rem;
-  color: #64748b;
-  text-transform: uppercase;
-  font-weight: 700;
-  margin-bottom: 2px;
-}
+    /* Séparateur vertical */
+    .divider {
+      width: 2px;
+      height: 75%;
+      background-color: #1e293b;
+      margin: 0 12px;
+      align-self: center;
+    }
 
-.secondary-time {
-  font-size: 1.9rem;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1;
-}
+    /* Premier passage (à droite, ÉNORME, jaune) */
+    .passage-primary {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      flex: 1;
+    }
 
-.secondary-unit {
-  font-size: 0.85rem;
-  color: #94a3b8;
-}
+    .primary-time-wrapper {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
 
-/* Séparateur vertical */
-.divider {
-  width: 2px;
-  height: 75%;
-  background-color: #1e293b;
-  margin: 0 12px;
-  align-self: center;
-}
+    .primary-time {
+      font-size: 5.6rem;
+      font-weight: 900;
+      color: #ffde00;
+      line-height: 0.85;
+      letter-spacing: -2px;
+      text-shadow: 0 0 16px rgba(255, 222, 0, 0.3);
+    }
 
-/* Premier passage (à droite, ÉNORME, jaune) */
-.passage-primary {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex: 1;
-}
+    .primary-unit {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #ffde00;
+    }
 
-.primary-time-wrapper {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
+    /* Style d'inactivité ou de blocage (Sans Jaune) */
+    .status-off-text {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ef4444;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
 
-.primary-time {
-  font-size: 5.2rem;
-  font-weight: 900;
-  color: #ffde00;
-  line-height: 0.85;
-  letter-spacing: -2px;
-  text-shadow: 0 0 16px rgba(255, 222, 0, 0.3);
-}
+    .status-ended-text {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
 
-.primary-unit {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #ffde00;
-}
+    .clock-times {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
 
-/* Style d'inactivité ou de blocage (Sans Jaune) */
-.status-off-text {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #ef4444;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background-color: #1e293b;
+      color: #94a3b8;
+      font-weight: 700;
+    }
 
-.status-ended-text {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #94a3b8;
-  text-transform: uppercase;
-}
+    .status-badge.blocked {
+      background-color: #7f1d1d;
+      color: #fca5a5;
+      border: 1px solid #ef4444;
+    }
 
-.clock-times {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 2px;
-}
+    .status-badge.ended {
+      background-color: #334155;
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
 
-.status-badge {
-  font-size: 0.72rem;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background-color: #1e293b;
-  color: #94a3b8;
-  font-weight: 700;
-}
+  <main class="dashboard-grid">
 
-.status-badge.blocked {
-  background-color: #7f1d1d;
-  color: #fca5a5;
-  border: 1px solid #ef4444;
-}
-
-.status-badge.ended {
-  background-color: #334155;
-  color: #cbd5e1;
-}
-
-
-<!-- Ligne 2 : Wattignies -> Orvault Grand Val -->
-<section class="transit-card card-l2 card-tram-l2">
-  <div class="card-header">
-    <div class="line-info">
-      <div class="badge badge-l2">2</div>
-      <div class="destination-details">
-        <div class="destination-name">Orvault Grand Val</div>
-        <div class="stop-point">Arrêt : Wattignies</div>
+    <!-- Ligne 2 : Wattignies -> Orvault Grand Val -->
+    <section class="transit-card card-l2 card-tram-l2">
+      <div class="card-header">
+        <div class="line-info">
+          <div class="badge badge-l2">2</div>
+          <div class="destination-details">
+            <div class="destination-name">Orvault Grand Val</div>
+            <div class="stop-point">Arrêt : Wattignies</div>
+          </div>
+        </div>
+        <div class="status-badge" id="status-l2">En service</div>
       </div>
-    </div>
-    <div class="status-badge" id="status-l2">En service</div>
-  </div>
 
-  <div class="siel-display">
-    <div class="passage-secondary" id="l2-sec-box">
-      <span class="passage-label">2e Tram</span>
-      <div class="secondary-time">
-        <span id="l2-p2-min">--</span>
-        <span class="secondary-unit" id="l2-p2-unit">min</span>
+      <div class="siel-display">
+        <div class="passage-secondary" id="l2-sec-box">
+          <span class="passage-label">2e Tram</span>
+          <div class="secondary-time">
+            <span id="l2-p2-min">--</span>
+            <span class="secondary-unit" id="l2-p2-unit">min</span>
+          </div>
+          <div class="clock-times" id="l2-p2-time">--:--</div>
+        </div>
+
+        <div class="divider" id="l2-divider"></div>
+
+        <div class="passage-primary">
+          <span class="passage-label" id="l2-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
+          <div class="primary-time-wrapper" id="l2-p1-wrapper">
+            <span class="primary-time" id="l2-p1-min">--</span>
+            <span class="primary-unit" id="l2-p1-unit">min</span>
+          </div>
+          <div id="l2-p1-status" class="status-off-text" style="display: none;">BLOQUÉ</div>
+          <div class="clock-times" id="l2-p1-time">--:--</div>
+        </div>
       </div>
-      <div class="clock-times" id="l2-p2-time">--:--</div>
-    </div>
+    </section>
 
-    <div class="divider" id="l2-divider"></div>
-
-    <div class="passage-primary">
-      <span class="passage-label" id="l2-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
-      <div class="primary-time-wrapper" id="l2-p1-wrapper">
-        <span class="primary-time" id="l2-p1-min">--</span>
-        <span class="primary-unit" id="l2-p1-unit">min</span>
+    <!-- Ligne 3 : Wattignies -> Marcel Paul -->
+    <section class="transit-card card-l3 card-tram-l3">
+      <div class="card-header">
+        <div class="line-info">
+          <div class="badge badge-l3">3</div>
+          <div class="destination-details">
+            <div class="destination-name">Marcel Paul</div>
+            <div class="stop-point">Arrêt : Wattignies</div>
+          </div>
+        </div>
+        <div class="status-badge" id="status-l3">En service</div>
       </div>
-      <div id="l2-p1-status" class="status-off-text" style="display: none;">BLOQUÉ</div>
-      <div class="clock-times" id="l2-p1-time">--:--</div>
-    </div>
-  </div>
-</section>
 
-<!-- Ligne 3 : Wattignies -> Marcel Paul -->
-<section class="transit-card card-l3 card-tram-l3">
-  <div class="card-header">
-    <div class="line-info">
-      <div class="badge badge-l3">3</div>
-      <div class="destination-details">
-        <div class="destination-name">Marcel Paul</div>
-        <div class="stop-point">Arrêt : Wattignies</div>
+      <div class="siel-display">
+        <div class="passage-secondary" id="l3-sec-box">
+          <span class="passage-label">2e Tram</span>
+          <div class="secondary-time">
+            <span id="l3-p2-min">--</span>
+            <span class="secondary-unit" id="l3-p2-unit">min</span>
+          </div>
+          <div class="clock-times" id="l3-p2-time">--:--</div>
+        </div>
+
+        <div class="divider" id="l3-divider"></div>
+
+        <div class="passage-primary">
+          <span class="passage-label" id="l3-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
+          <div class="primary-time-wrapper" id="l3-p1-wrapper">
+            <span class="primary-time" id="l3-p1-min">--</span>
+            <span class="primary-unit" id="l3-p1-unit">min</span>
+          </div>
+          <div id="l3-p1-status" class="status-off-text" style="display: none;">BLOQUÉ</div>
+          <div class="clock-times" id="l3-p1-time">--:--</div>
+        </div>
       </div>
-    </div>
-    <div class="status-badge" id="status-l3">En service</div>
-  </div>
+    </section>
 
-  <div class="siel-display">
-    <div class="passage-secondary" id="l3-sec-box">
-      <span class="passage-label">2e Tram</span>
-      <div class="secondary-time">
-        <span id="l3-p2-min">--</span>
-        <span class="secondary-unit" id="l3-p2-unit">min</span>
+    <!-- Busway 5 : Vincent Gâche -> Gare Sud -->
+    <section class="transit-card card-l5 card-bus-l5">
+      <div class="card-header">
+        <div class="line-info">
+          <div class="badge badge-l5">5</div>
+          <div class="destination-details">
+            <div class="destination-name">Gare Sud</div>
+            <div class="stop-point">Arrêt : Vincent Gâche</div>
+          </div>
+        </div>
+        <div class="status-badge" id="status-l5">En service</div>
       </div>
-      <div class="clock-times" id="l3-p2-time">--:--</div>
-    </div>
 
-    <div class="divider" id="l3-divider"></div>
+      <div class="siel-display">
+        <div class="passage-secondary" id="l5-sec-box">
+          <span class="passage-label">2e Busway</span>
+          <div class="secondary-time">
+            <span id="l5-p2-min">--</span>
+            <span class="secondary-unit" id="l5-p2-unit">min</span>
+          </div>
+          <div class="clock-times" id="l5-p2-time">--:--</div>
+        </div>
 
-    <div class="passage-primary">
-      <span class="passage-label" id="l3-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
-      <div class="primary-time-wrapper" id="l3-p1-wrapper">
-        <span class="primary-time" id="l3-p1-min">--</span>
-        <span class="primary-unit" id="l3-p1-unit">min</span>
+        <div class="divider" id="l5-divider"></div>
+
+        <div class="passage-primary">
+          <span class="passage-label" id="l5-p1-label" style="color: #cbd5e1;">Prochain Busway</span>
+          <div class="primary-time-wrapper" id="l5-p1-wrapper">
+            <span class="primary-time" id="l5-p1-min">--</span>
+            <span class="primary-unit" id="l5-p1-unit">min</span>
+          </div>
+          <div id="l5-p1-status" class="status-off-text" style="display: none;">BLOQUÉ</div>
+          <div class="clock-times" id="l5-p1-time">--:--</div>
+        </div>
       </div>
-      <div id="l3-p1-status" class="status-off-text" style="display: none;">BLOQUÉ</div>
-      <div class="clock-times" id="l3-p1-time">--:--</div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<!-- Busway 5 : Vincent Gâche -> Gare Sud -->
-<section class="transit-card card-l5 card-bus-l5">
-  <div class="card-header">
-    <div class="line-info">
-      <div class="badge badge-l5">5</div>
-      <div class="destination-details">
-        <div class="destination-name">Gare Sud</div>
-        <div class="stop-point">Arrêt : Vincent Gâche</div>
-      </div>
-    </div>
-    <div class="status-badge" id="status-l5">En service</div>
-  </div>
+  </main>
 
-  <div class="siel-display">
-    <div class="passage-secondary" id="l5-sec-box">
-      <span class="passage-label">2e Busway</span>
-      <div class="secondary-time">
-        <span id="l5-p2-min">--</span>
-        <span class="secondary-unit" id="l5-p2-unit">min</span>
-      </div>
-      <div class="clock-times" id="l5-p2-time">--:--</div>
-    </div>
+  <script>
+    const CONFIG = {
+      l2: { quay: 'FR_NAOLIB:Quay:1312' },
+      l3: { quay: 'FR_NAOLIB:Quay:1312' },
+      l5: { quay: 'FR_NAOLIB:Quay:1254' }
+    };
 
-    <div class="divider" id="l5-divider"></div>
+    function buildSiriPayload(quayId) {
+      const timestamp = new Date().toISOString();
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sw="http://wsdl.siri.org.uk" xmlns:siri="http://www.siri.org.uk/siri">
+  <S:Body>
+    <sw:GetStopMonitoring>
+      <ServiceRequestInfo>
+        <siri:RequestTimestamp>${timestamp}</siri:RequestTimestamp>
+        <siri:RequestorRef>opendata</siri:RequestorRef>
+        <siri:MessageIdentifier>Req::${Date.now()}</siri:MessageIdentifier>
+      </ServiceRequestInfo>
+      <Request>
+        <siri:RequestTimestamp>${timestamp}</siri:RequestTimestamp>
+        <siri:MessageIdentifier>Req::${Date.now()}</siri:MessageIdentifier>
+        <siri:MonitoringRef>${quayId}</siri:MonitoringRef>
+        <siri:StopVisitTypes>all</siri:StopVisitTypes>
+      </Request>
+    </sw:GetStopMonitoring>
+  </S:Body>
+</S:Envelope>`;
+    }
 
-    <div class="passage-primary">
-      <span class="passage-label" id="l5-p1-label" style="color: #cbd5e1;">Prochain Busway</span>
-      <div class="primary-time-wrapper" id="l5-p1-wrapper">
-        <span class="primary-time" id="l5-p1-min">--</span>
-        <span class="primary-unit" id="l5-p1-unit">min</span>
-      </div>
-      <div id="l5-p1-status" class="status-off-text" style="display: none;">BLOQUÉ</div>
-      <div class="clock-times" id="l5-p1-time">--:--</div>
-    </div>
-  </div>
-</section>
+    async function fetchStopData(key, config) {
+      const targetUrl = 'https://api.tan.fr/siri/siri.php';
+      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+
+      try {
+        const response = await fetch(proxyUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/xml' },
+          body: buildSiriPayload(config.quay)
+        });
+
+        if (!response.ok) throw new Error('Erreur API');
+
+        const xmlText = await response.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+
+        const isBlocked = xmlDoc.getElementsByTagName('SituationRef').length > 0;
+        
+        const visits = Array.from(xmlDoc.getElementsByTagName('MonitoredStopVisit'));
+        const now = new Date();
+
+        const arrivals = visits
+          .map(visit => {
+            const timeStr = visit.getElementsByTagName('ExpectedArrivalTime')[0]?.textContent ||
+                            visit.getElementsByTagName('AimedArrivalTime')[0]?.textContent;
+            if (!timeStr) return null;
+            const arrivalDate = new Date(timeStr);
+            const diffMin = Math.max(0, Math.round((arrivalDate - now) / 60000));
+            return {
+              timeFormatted: arrivalDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+              minutesLeft: diffMin
+            };
+          })
+          .filter(item => item !== null)
+          .sort((a, b) => a.minutesLeft - b.minutesLeft);
+
+        updateCardUI(key, arrivals, isBlocked);
+
+      } catch (err) {
+        console.warn(`Mode repli / inactivité pour ${key}`);
+        updateCardUI(key, [], false);
+      }
+    }
+
+    function updateCardUI(key, arrivals, isBlocked) {
+      const statusBadge = document.getElementById(`status-${key}`);
+      const p1Wrapper = document.getElementById(`${key}-p1-wrapper`);
+      const p1Status = document.getElementById(`${key}-p1-status`);
+      const secBox = document.getElementById(`${key}-sec-box`);
+      const divider = document.getElementById(`${key}-divider`);
+
+      if (isBlocked) {
+        statusBadge.textContent = "BLOQUÉ / PERTURBÉ";
+        statusBadge.className = "status-badge blocked";
+        p1Wrapper.style.display = "none";
+        p1Status.style.display = "block";
+        p1Status.textContent = "LIGNE BLOQUÉE";
+        p1Status.className = "status-off-text";
+        secBox.style.display = "none";
+        divider.style.display = "none";
+        document.getElementById(`${key}-p1-time`).textContent = "--:--";
+      } 
+      else if (arrivals.length === 0) {
+        statusBadge.textContent = "Service terminé";
+        statusBadge.className = "status-badge ended";
+        p1Wrapper.style.display = "none";
+        p1Status.style.display = "block";
+        p1Status.textContent = "DERNIER SERVICE PASSÉ";
+        p1Status.className = "status-ended-text";
+        secBox.style.display = "none";
+        divider.style.display = "none";
+        document.getElementById(`${key}-p1-time`).textContent = "Reprise demain";
+      } 
+      else {
+        statusBadge.textContent = "En service";
+        statusBadge.className = "status-badge";
+        p1Wrapper.style.display = "flex";
+        p1Status.style.display = "none";
+        secBox.style.display = "flex";
+        divider.style.display = "block";
+
+        const p1 = arrivals[0];
+        const p2 = arrivals[1];
+
+        document.getElementById(`${key}-p1-min`).textContent = p1.minutesLeft;
+        document.getElementById(`${key}-p1-time`).textContent = p1.timeFormatted;
+
+        if (p2) {
+          document.getElementById(`${key}-p2-min`).textContent = p2.minutesLeft;
+          document.getElementById(`${key}-p2-time`).textContent = p2.timeFormatted;
+          document.getElementById(`${key}-p2-unit`).style.display = "inline";
+        } else {
+          document.getElementById(`${key}-p2-min`).textContent = "--";
+          document.getElementById(`${key}-p2-time`).textContent = "--:--";
+        }
+      }
+    }
+
+    function refreshAll() {
+      fetchStopData('l2', CONFIG.l2);
+      fetchStopData('l3', CONFIG.l3);
+      fetchStopData('l5', CONFIG.l5);
+    }
+
+    refreshAll();
+    setInterval(refreshAll, 30000);
+  </script>
+</body>
+</html>
