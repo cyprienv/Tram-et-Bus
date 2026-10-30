@@ -400,110 +400,57 @@
 
   <script>
     const CONFIG = {
-      l2: { quay: 'FR_NAOLIB:Quay:1312', lineNum: '2' },
-      l3: { quay: 'FR_NAOLIB:Quay:1312', lineNum: '3' },
-      l5: { quay: 'FR_NAOLIB:Quay:1254', lineNum: '5' }
+      l2: { stopCode: '1312', lineNum: '2' },
+      l3: { stopCode: '1312', lineNum: '3' },
+      l5: { stopCode: '1254', lineNum: '5' }
     };
 
-    function buildSiriPayload(quayId) {
-      const timestamp = new Date().toISOString();
-      return `<?xml version="1.0" encoding="UTF-8"?>
-<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sw="http://wsdl.siri.org.uk" xmlns:siri="http://www.siri.org.uk/siri">
-  <S:Body>
-    <sw:GetStopMonitoring>
-      <ServiceRequestInfo>
-        <siri:RequestTimestamp>${timestamp}</siri:RequestTimestamp>
-        <siri:RequestorRef>opendata</siri:RequestorRef>
-        <siri:MessageIdentifier>Req::${Date.now()}</siri:MessageIdentifier>
-      </ServiceRequestInfo>
-      <Request>
-        <siri:RequestTimestamp>${timestamp}</siri:RequestTimestamp>
-        <siri:MessageIdentifier>Req::${Date.now()}</siri:MessageIdentifier>
-        <siri:MonitoringRef>${quayId}</siri:MonitoringRef>
-        <siri:StopVisitTypes>all</siri:StopVisitTypes>
-      </Request>
-    </sw:GetStopMonitoring>
-  </S:Body>
-</S:Envelope>`;
-    }
-
     async function fetchStopData(key, config) {
-      const targetUrl = 'https://api.tan.fr/siri/siri.php';
+      const targetUrl = `https://open.tan.fr/json/tempsattente.json/${config.stopCode}`;
       const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
 
       try {
-        const response = await fetch(proxyUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/xml' },
-          body: buildSiriPayload(config.quay)
-        });
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('Erreur API TAN');
 
-        if (!response.ok) throw new Error('API non joignable');
-
-        const xmlText = await response.text();
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-
-        const isBlocked = xmlDoc.getElementsByTagName('SituationRef').length > 0;
-        const visits = Array.from(xmlDoc.getElementsByTagName('MonitoredStopVisit'));
+        const data = await response.json();
         const now = new Date();
 
-        let arrivals = [];
+        // Filtrer les passages correspondant précisément à la ligne demandée
+        const lineArrivals = data.filter(item => item.ligne && item.ligne.numLigne === config.lineNum);
 
-        for (let visit of visits) {
-          const lineRef = visit.getElementsByTagName('LineRef')[0]?.textContent || '';
-          const publishedName = visit.getElementsByTagName('PublishedLineName')[0]?.textContent || '';
+        const arrivals = lineArrivals.map(item => {
+          let mins = 0;
+          const tempsStr = item.temps ? item.temps.trim() : "";
           
-          // Vérification souple de la ligne
-          if (lineRef.includes(config.lineNum) || publishedName === config.lineNum || visits.length === 1) {
-            const expectedStr = visit.getElementsByTagName('ExpectedArrivalTime')[0]?.textContent;
-            const aimedStr = visit.getElementsByTagName('AimedArrivalTime')[0]?.textContent || expectedStr;
-
-            if (aimedStr || expectedStr) {
-              const aimedDate = new Date(aimedStr || expectedStr);
-              const expectedDate = new Date(expectedStr || aimedStr);
-
-              const diffMin = Math.max(0, Math.round((expectedDate - now) / 60000));
-              const delayMin = Math.round((expectedDate - aimedDate) / 60000);
-
-              arrivals.push({
-                timeFormatted: expectedDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-                minutesLeft: diffMin,
-                isDelayed: delayMin > 1
-              });
-            }
+          if (tempsStr.toLowerCase().includes("min")) {
+            mins = parseInt(tempsStr) || 0;
+          } else if (tempsStr.toLowerCase() === "prochain" || tempsStr.toLowerCase() === "approche") {
+            mins = 0;
+          } else if (tempsStr.includes(":")) {
+            const [h, m] = tempsStr.split(":").map(Number);
+            const arrDate = new Date();
+            arrDate.setHours(h, m, 0, 0);
+            if (arrDate < now) arrDate.setDate(arrDate.getDate() + 1);
+            mins = Math.max(0, Math.round((arrDate - now) / 60000));
           }
-        }
 
-        // Tri par ordre de passage imminent
-        arrivals.sort((a, b) => a.minutesLeft - b.minutesLeft);
+          const arrivalTimeObj = new Date(now.getTime() + mins * 60000);
+          const timeFormatted = arrivalTimeObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-        // Si l'API ne renvoie rien pour cette ligne spécifique, on applique le mode de secours automatique pour garantir l'affichage
-        if (arrivals.length === 0 && !isBlocked) {
-          arrivals = generateMockArrivals();
-        }
+          return {
+            minutesLeft: mins,
+            timeFormatted: timeFormatted,
+            isDelayed: false // L'API JSON simple indique le temps réel directement
+          };
+        }).sort((a, b) => a.minutesLeft - b.minutesLeft);
 
-        updateCardUI(key, arrivals, isBlocked);
+        updateCardUI(key, arrivals, false);
 
       } catch (err) {
-        console.warn(`Mode de secours activé pour ${key}`);
-        const fallback = generateMockArrivals();
-        updateCardUI(key, fallback, false);
+        console.warn(`Erreur de récupération pour ${key}`, err);
+        updateCardUI(key, [], false);
       }
-    }
-
-    function generateMockArrivals() {
-      const now = new Date();
-      const m1 = Math.floor(Math.random() * 4) + 2;
-      const m2 = m1 + Math.floor(Math.random() * 6) + 5;
-      
-      const t1 = new Date(now.getTime() + m1 * 60000);
-      const t2 = new Date(now.getTime() + m2 * 60000);
-
-      return [
-        { minutesLeft: m1, timeFormatted: t1.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), isDelayed: false },
-        { minutesLeft: m2, timeFormatted: t2.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), isDelayed: true }
-      ];
     }
 
     function updatePunctualityTag(elementId, isDelayed) {
