@@ -43,8 +43,9 @@ const STOPS = [
 
 const REFRESH_SECONDS = 30;
 const MAX_ROWS = 4;
-// Utilisation d'un proxy alternatif robuste (CodeTabs)
-const API = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent("https://open.tan.fr/ewp/tempsattente.json/");
+
+// Utilisation d'un proxy CORS global propre (allorigins) ciblant l'API officielle
+const getProxyUrl = (code) => `https://api.allorigins.win/raw?url=${encodeURIComponent("https://open.tan.fr/ewp/tempsattente.json/" + code)}`;
 
 const board = document.getElementById("board");
 const statusEl = document.getElementById("status");
@@ -102,7 +103,7 @@ async function refresh() {
 
   await Promise.all(uniqueCodes.map(async code => {
     try {
-      const res = await fetch(API + code, { cache: "no-store" });
+      const res = await fetch(getProxyUrl(code), { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
       cacheData[code] = await res.json();
     } catch (err) {
