@@ -1,0 +1,32 @@
+name: Mettre à jour les horaires Naolib
+
+on:
+  schedule:
+    - cron: '*/2 * * * *'  # Toutes les 2 minutes
+  workflow_dispatch:      # Lancement manuel possible
+
+permissions:
+  contents: write         # INDISPENSABLE pour autoriser le bot à modifier le fichier JSON
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Récupérer le code du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 🚀 Executer le script Python
+        run: python fetch_tan.py
+
+      - name: 💾 Sauvegarder et publier 'horaires.json'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add horaires.json
+          git commit -m "Mise à jour automatique des horaires [skip ci]" || exit 0
+          git push
