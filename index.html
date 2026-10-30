@@ -22,49 +22,37 @@
       overflow: hidden;
     }
 
-    /* Grille principale : Trams en haut (2 cols), Busway en bas (1 col) */
+    /* Grille principale pleine hauteur (Trams en haut, Busway en bas) */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
       gap: 10px;
-      flex: 1;
       height: 100%;
+      width: 100%;
     }
 
-    .card-tram-l2 {
-      grid-column: 1 / 2;
-      grid-row: 1 / 2;
-    }
+    .card-tram-l2 { grid-column: 1 / 2; grid-row: 1 / 2; }
+    .card-tram-l3 { grid-column: 2 / 3; grid-row: 1 / 2; }
+    .card-bus-l5  { grid-column: 1 / 3; grid-row: 2 / 3; }
 
-    .card-tram-l3 {
-      grid-column: 2 / 3;
-      grid-row: 1 / 2;
-    }
-
-    .card-bus-l5 {
-      grid-column: 1 / 3;
-      grid-row: 2 / 3;
-    }
-
-    /* Style général des cartes d'arrêt */
+    /* Cartes d'affichage */
     .transit-card {
       background-color: #141c2e;
       border-radius: 12px;
-      padding: 10px 14px;
+      padding: 12px 16px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       border-left: 8px solid #555;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      position: relative;
     }
 
     .card-l2 { border-left-color: #e30613; }
     .card-l3 { border-left-color: #009ee0; }
     .card-l5 { border-left-color: #00d2ff; }
 
-    /* En-tête de la ligne */
+    /* En-tête de ligne */
     .card-header {
       display: flex;
       align-items: center;
@@ -74,12 +62,12 @@
     .line-info {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .badge {
-      width: 40px;
-      height: 40px;
+      width: 42px;
+      height: 42px;
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -112,108 +100,6 @@
       color: #94a3b8;
     }
 
-    /* Affichage du style SIEL */
-    .siel-display {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      background-color: #090d16;
-      border-radius: 8px;
-      padding: 6px 14px;
-      border: 1px solid #1e293b;
-      margin-top: 4px;
-      flex: 1;
-      min-height: 90px;
-    }
-
-    /* Second passage (à gauche, petit, blanc) */
-    .passage-secondary {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      min-width: 80px;
-    }
-
-    .passage-label {
-      font-size: 0.72rem;
-      color: #64748b;
-      text-transform: uppercase;
-      font-weight: 700;
-      margin-bottom: 2px;
-    }
-
-    .secondary-time {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #ffffff;
-      line-height: 1;
-    }
-
-    .secondary-unit {
-      font-size: 0.85rem;
-      color: #94a3b8;
-    }
-
-    /* Séparateur vertical */
-    .divider {
-      width: 2px;
-      height: 75%;
-      background-color: #1e293b;
-      margin: 0 12px;
-      align-self: center;
-    }
-
-    /* Premier passage (à droite, ÉNORME, jaune) */
-    .passage-primary {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      flex: 1;
-    }
-
-    .primary-time-wrapper {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-    }
-
-    .primary-time {
-      font-size: 5.6rem;
-      font-weight: 900;
-      color: #ffde00;
-      line-height: 0.85;
-      letter-spacing: -2px;
-      text-shadow: 0 0 16px rgba(255, 222, 0, 0.3);
-    }
-
-    .primary-unit {
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: #ffde00;
-    }
-
-    /* Style d'inactivité ou de blocage (Sans Jaune) */
-    .status-off-text {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: #ef4444;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .status-ended-text {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #94a3b8;
-      text-transform: uppercase;
-    }
-
-    .clock-times {
-      font-size: 0.75rem;
-      color: #64748b;
-      margin-top: 2px;
-    }
-
     .status-badge {
       font-size: 0.75rem;
       padding: 3px 8px;
@@ -232,6 +118,110 @@
     .status-badge.ended {
       background-color: #334155;
       color: #cbd5e1;
+    }
+
+    /* Cadre d'affichage SIEL */
+    .siel-display {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      background-color: #090d16;
+      border-radius: 8px;
+      padding: 8px 16px;
+      border: 1px solid #1e293b;
+      margin-top: 6px;
+      flex: 1;
+      min-height: 85px;
+    }
+
+    /* 2e passage (à gauche, blanc, plus petit) */
+    .passage-secondary {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 80px;
+    }
+
+    .passage-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .secondary-time {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .secondary-unit {
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    .divider {
+      width: 2px;
+      height: 70%;
+      background-color: #1e293b;
+      margin: 0 12px;
+      align-self: center;
+    }
+
+    /* 1er passage (à droite) */
+    .passage-primary {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      flex: 1;
+    }
+
+    /* ÉTAT 1 : En service (Chiffre jaune géant) */
+    .primary-time-wrapper {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .primary-time {
+      font-size: 5.2rem;
+      font-weight: 900;
+      color: #ffde00;
+      line-height: 0.9;
+      text-shadow: 0 0 16px rgba(255, 222, 0, 0.3);
+    }
+
+    .primary-unit {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ffde00;
+    }
+
+    /* ÉTAT 2 : Ligne bloquée */
+    .status-blocked-text {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #ef4444;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+    }
+
+    /* ÉTAT 3 : Dernier service passé */
+    .status-ended-text {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .clock-times {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 2px;
     }
   </style>
 </head>
@@ -266,11 +256,16 @@
 
         <div class="passage-primary">
           <span class="passage-label" id="l2-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
+          
+          <!-- État 1 : Normal / En service -->
           <div class="primary-time-wrapper" id="l2-p1-wrapper">
             <span class="primary-time" id="l2-p1-min">--</span>
             <span class="primary-unit" id="l2-p1-unit">min</span>
           </div>
-          <div id="l2-p1-status" class="status-off-text" style="display: none;">BLOQUÉ</div>
+          
+          <!-- État 2 & 3 : Bloqué ou Dernier service -->
+          <div id="l2-p1-status" style="display: none;"></div>
+
           <div class="clock-times" id="l2-p1-time">--:--</div>
         </div>
       </div>
@@ -303,11 +298,16 @@
 
         <div class="passage-primary">
           <span class="passage-label" id="l3-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
+          
+          <!-- État 1 : Normal / En service -->
           <div class="primary-time-wrapper" id="l3-p1-wrapper">
             <span class="primary-time" id="l3-p1-min">--</span>
             <span class="primary-unit" id="l3-p1-unit">min</span>
           </div>
-          <div id="l3-p1-status" class="status-off-text" style="display: none;">BLOQUÉ</div>
+          
+          <!-- État 2 & 3 : Bloqué ou Dernier service -->
+          <div id="l3-p1-status" style="display: none;"></div>
+
           <div class="clock-times" id="l3-p1-time">--:--</div>
         </div>
       </div>
@@ -340,11 +340,16 @@
 
         <div class="passage-primary">
           <span class="passage-label" id="l5-p1-label" style="color: #cbd5e1;">Prochain Busway</span>
+          
+          <!-- État 1 : Normal / En service -->
           <div class="primary-time-wrapper" id="l5-p1-wrapper">
             <span class="primary-time" id="l5-p1-min">--</span>
             <span class="primary-unit" id="l5-p1-unit">min</span>
           </div>
-          <div id="l5-p1-status" class="status-off-text" style="display: none;">BLOQUÉ</div>
+          
+          <!-- État 2 & 3 : Bloqué ou Dernier service -->
+          <div id="l5-p1-status" style="display: none;"></div>
+
           <div class="clock-times" id="l5-p1-time">--:--</div>
         </div>
       </div>
@@ -398,6 +403,7 @@
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
 
+        // Détection si la ligne est bloquée / perturbée
         const isBlocked = xmlDoc.getElementsByTagName('SituationRef').length > 0;
         
         const visits = Array.from(xmlDoc.getElementsByTagName('MonitoredStopVisit'));
@@ -421,7 +427,7 @@
         updateCardUI(key, arrivals, isBlocked);
 
       } catch (err) {
-        console.warn(`Mode repli / inactivité pour ${key}`);
+        console.warn(`Aucune donnée reçue pour ${key}`);
         updateCardUI(key, [], false);
       }
     }
@@ -433,32 +439,40 @@
       const secBox = document.getElementById(`${key}-sec-box`);
       const divider = document.getElementById(`${key}-divider`);
 
+      // ÉTAT 2 : LIGNE BLOQUÉE
       if (isBlocked) {
-        statusBadge.textContent = "BLOQUÉ / PERTURBÉ";
+        statusBadge.textContent = "BLOQUÉ";
         statusBadge.className = "status-badge blocked";
-        p1Wrapper.style.display = "none";
+        
+        p1Wrapper.style.display = "none"; // Masque le chiffre jaune
         p1Status.style.display = "block";
-        p1Status.textContent = "LIGNE BLOQUÉE";
-        p1Status.className = "status-off-text";
+        p1Status.textContent = "BLOQUÉ";
+        p1Status.className = "status-blocked-text";
+        
         secBox.style.display = "none";
         divider.style.display = "none";
         document.getElementById(`${key}-p1-time`).textContent = "--:--";
       } 
+      // ÉTAT 3 : DERNIER SERVICE PASSÉ (Pas d'arrivées disponibles)
       else if (arrivals.length === 0) {
         statusBadge.textContent = "Service terminé";
         statusBadge.className = "status-badge ended";
-        p1Wrapper.style.display = "none";
+        
+        p1Wrapper.style.display = "none"; // Masque le chiffre jaune
         p1Status.style.display = "block";
-        p1Status.textContent = "DERNIER SERVICE PASSÉ";
+        p1Status.textContent = "DERNIER SERVICE";
         p1Status.className = "status-ended-text";
+        
         secBox.style.display = "none";
         divider.style.display = "none";
-        document.getElementById(`${key}-p1-time`).textContent = "Reprise demain";
+        document.getElementById(`${key}-p1-time`).textContent = "Fin de service";
       } 
+      // ÉTAT 1 : EN SERVICE (Normal)
       else {
         statusBadge.textContent = "En service";
         statusBadge.className = "status-badge";
-        p1Wrapper.style.display = "flex";
+        
+        p1Wrapper.style.display = "flex"; // Affiche le chiffre jaune géant
         p1Status.style.display = "none";
         secBox.style.display = "flex";
         divider.style.display = "block";
