@@ -22,7 +22,6 @@
       overflow-x: hidden;
     }
 
-    /* Grille Principale (Responsive) */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -36,7 +35,6 @@
     .card-tram-l3 { grid-column: 2 / 3; grid-row: 1 / 2; }
     .card-bus-l5  { grid-column: 1 / 3; grid-row: 2 / 3; }
 
-    /* Cartes d'affichage */
     .transit-card {
       background-color: #141c2e;
       border-radius: 12px;
@@ -53,7 +51,6 @@
     .card-l3 { border-left-color: #009ee0; }
     .card-l5 { border-left-color: #00d2ff; }
 
-    /* En-tête de ligne */
     .card-header {
       display: flex;
       align-items: center;
@@ -121,7 +118,6 @@
       color: #cbd5e1;
     }
 
-    /* Cadre d'affichage SIEL */
     .siel-display {
       display: flex;
       align-items: flex-end;
@@ -135,7 +131,6 @@
       min-height: 85px;
     }
 
-    /* Badges de ponctualité / mode */
     .punctuality-tag {
       font-size: 0.65rem;
       font-weight: 800;
@@ -165,7 +160,6 @@
       border: 1px solid rgba(255, 255, 255, 0.25);
     }
 
-    /* 2e passage (à gauche, blanc, plus petit) */
     .passage-secondary {
       display: flex;
       flex-direction: column;
@@ -200,7 +194,6 @@
       align-self: center;
     }
 
-    /* 1er passage (à droite) */
     .passage-primary {
       display: flex;
       flex-direction: column;
@@ -209,7 +202,6 @@
       flex: 1;
     }
 
-    /* Chiffre du prochain départ agrandi de 40% (6.7rem) */
     .primary-time-wrapper {
       display: flex;
       align-items: baseline;
@@ -239,7 +231,6 @@
     .primary-unit.realtime { color: #ffde00; }
     .primary-unit.theoretical { color: #ffffff; }
 
-    /* Messages d'états */
     .status-blocked-text {
       font-size: 2.2rem;
       font-weight: 900;
@@ -261,7 +252,6 @@
       margin-top: 2px;
     }
 
-    /* --- ADAPTATION PORTABLE / MOBILE (ÉCRAN VERTICAL) --- */
     @media (max-width: 768px) {
       body {
         overflow-y: auto;
@@ -414,7 +404,6 @@
   </main>
 
   <script>
-    // Correction des identifiants officiels Naolib (TAN) pour interroger les bons quais
     const CONFIG = {
       l2: { stopCode: 'WATT', lineNum: '2' },
       l3: { stopCode: 'WATT', lineNum: '3' },
@@ -474,32 +463,15 @@
         if (isExplicitlyUnavailable) {
           updateCardUI(key, [], true);
         } else if (arrivals.length === 0) {
-          // Si l'API ne renvoie aucun passage, on passe en mode théorique au lieu d'afficher indisponible par défaut
-          const fallback = generateTheoreticalFallback();
-          updateCardUI(key, fallback, false);
+          updateCardUI(key, [], false); // Passe en mode fin de service si aucun passage
         } else {
           updateCardUI(key, arrivals, false);
         }
 
       } catch (err) {
-        console.warn(`Erreur réseau pour ${key}, affichage théorique de secours`);
-        const fallback = generateTheoreticalFallback();
-        updateCardUI(key, fallback, false);
+        console.warn(`Erreur réseau pour ${key}, impossible de récupérer le temps réel.`);
+        updateCardUI(key, [], true);
       }
-    }
-
-    function generateTheoreticalFallback() {
-      const now = new Date();
-      const m1 = 4;
-      const m2 = 12;
-
-      const t1 = new Date(now.getTime() + m1 * 60000);
-      const t2 = new Date(now.getTime() + m2 * 60000);
-
-      return [
-        { minutesLeft: m1, timeFormatted: t1.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), isDelayed: false, isTheoretical: true },
-        { minutesLeft: m2, timeFormatted: t2.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), isDelayed: false, isTheoretical: true }
-      ];
     }
 
     function updatePunctualityTag(elementId, isDelayed, isTheoretical) {
@@ -547,7 +519,7 @@
         
         p1Wrapper.style.display = "none";
         p1Status.style.display = "block";
-        p1Status.textContent = "DERNIER SERVICE";
+        p1Status.textContent = "FIN DE SERVICE";
         p1Status.className = "status-ended-text";
         
         secBox.style.display = "none";
@@ -576,12 +548,10 @@
           p1UnitEl.className = "primary-unit realtime";
         }
 
-        // 1er passage
         p1MinEl.textContent = p1.minutesLeft;
         document.getElementById(`${key}-p1-time`).textContent = p1.timeFormatted;
         updatePunctualityTag(`${key}-p1-punctual`, p1.isDelayed, p1.isTheoretical);
 
-        // 2e passage
         if (p2) {
           document.getElementById(`${key}-p2-min`).textContent = p2.minutesLeft;
           document.getElementById(`${key}-p2-time`).textContent = p2.timeFormatted;
