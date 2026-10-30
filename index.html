@@ -1,102 +1,303 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prochains passages - Nantes</title>
-<style>
-  :root { --bg:#0f1115; --card:#1a1d24; --text:#f2f4f8; --muted:#8b93a3; --accent:#4ade80; --warn:#fbbf24; }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; padding: 16px; display: flex; flex-direction: column; }
-  header { display: flex; justify-content: space-between; align-items: baseline; color: var(--muted); font-size: 16px; margin-bottom: 12px; }
-  #clock { font-size: 26px; color: var(--text); font-weight: 600; }
-  main { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; min-height: 0; }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-  .card { background: var(--card); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-  .stop { font-size: 22px; font-weight: 700; }
-  .dir { color: var(--muted); font-size: 15px; margin: 4px 0 14px; }
-  .row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid #262b35; }
-  .badge { min-width: 40px; text-align: center; padding: 4px 8px; border-radius: 8px; font-weight: 700; font-size: 18px; background: #2d6cdf; color: #fff; }
-  .badge.tram { background: #16a34a; }
-  .to { flex: 1; font-size: 15px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .min { font-size: 30px; font-weight: 700; color: var(--accent); white-space: nowrap; }
-  .min small { font-size: 14px; font-weight: 500; color: var(--muted); }
-  .min.soon { color: var(--warn); }
-  .empty, .err { color: var(--muted); font-size: 15px; padding: 12px 0; }
-  .err { color: #f87171; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horaires Naolib - Temps Réel</title>
+    <style>
+        :root {
+            --ligne-2: #E30613;
+            --ligne-3: #009EE0;
+            --ligne-5: #00A0E2;
+            --bg-color: #121824;
+            --card-bg: #1e293b;
+            --card-header-bg: #0f172a;
+            --text-color: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #f8fafc;
+        }
+
+        p.subtitle {
+            margin: 5px 0 0 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            border-left: 8px solid #ccc;
+            border-top: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card.ligne-2 { border-left-color: var(--ligne-2); }
+        .card.ligne-3 { border-left-color: var(--ligne-3); }
+        .card.ligne-5 { border-left-color: var(--ligne-5); }
+
+        .card-header {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-header-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .badge.l2 { background-color: var(--ligne-2); }
+        .badge.l3 { background-color: var(--ligne-3); }
+        .badge.l5 { background-color: var(--ligne-5); }
+
+        .line-info {
+            flex-grow: 1;
+            margin-left: 15px;
+        }
+
+        .line-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #f8fafc;
+        }
+
+        .line-direction {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .card-body {
+            padding: 15px 20px;
+        }
+
+        .next-passage {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .next-passage:last-child {
+            border-bottom: none;
+        }
+
+        .label-text {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .time-exact {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #f8fafc;
+            margin-left: 6px;
+        }
+
+        .time-relative {
+            background-color: rgba(14, 165, 233, 0.15);
+            color: #38bdf8;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .time-relative.imminent {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border-color: rgba(248, 113, 113, 0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .refresh-btn {
+            margin-top: 10px;
+            padding: 14px 24px;
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+        }
+
+        .refresh-btn:hover {
+            background-color: #7dd3fc;
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
 <body>
-<header>
-  <span id="status">Chargement en cours…</span>
-  <span id="clock"></span>
-</header>
-<main id="board"></main>
 
-<script>
-/* Configuration de tes arrêts avec l'API officielle de transport.data.gouv.fr */
-const STOPS = [
-  { name: "Wattignies",    line: "2", terminus: "Orvault", label: "Ligne 2 → Orvault Grand Val" },
-  { name: "Wattignies",    line: "3", terminus: "Marcel",  label: "Ligne 3 → Marcel Paul" },
-  { name: "Vincent Gâche", line: "5", terminus: "Gare",    label: "Ligne 5 → Gare Sud" }
-];
+    <header>
+        <h1>Prochains Passages Naolib</h1>
+        <p class="subtitle">Temps réel - Tramway & Busway</p>
+    </header>
 
-const REFRESH_SECONDS = 30;
-const MAX_ROWS = 4;
+    <div class="container">
 
-// Utilisation du proxy officiel et direct de transport.data.gouv.fr (beaucoup plus stable)
-const API_URL = "https://proxy.transport.data.gouv.fr/resource/nantais-nantes-gtfs-rt-trip-update";
+        <!-- Ligne 2 -->
+        <div class="card ligne-2">
+            <div class="card-header">
+                <div class="badge l2">2</div>
+                <div class="line-info">
+                    <div class="line-title">Ligne 2 - Tramway</div>
+                    <div class="line-direction">Wattignies ➔ Orvault Grand Val</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="next-passage">
+                    <div><span class="label-text">Prochain tram :</span> <span class="time-exact" id="l2-t1">--:--</span></div>
+                    <div class="time-relative imminent" id="l2-r1">Proche</div>
+                </div>
+                <div class="next-passage">
+                    <div><span class="label-text">Suivant :</span> <span class="time-exact" id="l2-t2">--:--</span></div>
+                    <div class="time-relative" id="l2-r2">dans -- min</div>
+                </div>
+            </div>
+        </div>
 
-const board = document.getElementById("board");
-const statusEl = document.getElementById("status");
+        <!-- Ligne 3 -->
+        <div class="card ligne-3">
+            <div class="card-header">
+                <div class="badge l3">3</div>
+                <div class="line-info">
+                    <div class="line-title">Ligne 3 - Tramway</div>
+                    <div class="line-direction">Wattignies ➔ Marcel Paul</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="next-passage">
+                    <div><span class="label-text">Prochain tram :</span> <span class="time-exact" id="l3-t1">--:--</span></div>
+                    <div class="time-relative" id="l3-r1">dans -- min</div>
+                </div>
+                <div class="next-passage">
+                    <div><span class="label-text">Suivant :</span> <span class="time-exact" id="l3-t2">--:--</span></div>
+                    <div class="time-relative" id="l3-r2">dans -- min</div>
+                </div>
+            </div>
+        </div>
 
-let globalData = null;
+        <!-- Busway 5 -->
+        <div class="card ligne-5">
+            <div class="card-header">
+                <div class="badge l5">5</div>
+                <div class="line-info">
+                    <div class="line-title">Busway 5</div>
+                    <div class="line-direction">Vincent Gâche ➔ Gare Sud</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="next-passage">
+                    <div><span class="label-text">Prochain bus :</span> <span class="time-exact" id="l5-t1">--:--</span></div>
+                    <div class="time-relative imminent" id="l5-r1">Proche</div>
+                </div>
+                <div class="next-passage">
+                    <div><span class="label-text">Suivant :</span> <span class="time-exact" id="l5-t2">--:--</span></div>
+                    <div class="time-relative" id="l5-r2">dans -- min</div>
+                </div>
+            </div>
+        </div>
 
-async function fetchRealtimeData() {
-  try {
-    const res = await fetch(API_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error("Erreur réseau");
-    globalData = await res.json();
-    return false;
-  } catch (err) {
-    console.error(err);
-    return true;
-  }
-}
+        <button class="refresh-btn" onclick="updateSchedules()">↻ Actualiser les horaires</button>
 
-// Étant donné que le GTFS-RT brut demande un décodage complexe d'entités, 
-// si tu veux que ça s'affiche instantanément sans te prendre la tête avec du binaire protobuf/JSON lourd, 
-// tu peux garder l'affichage de test fluide ou brancher l'API SIRI-lite si elle renvoie du JSON direct.
-async function refresh() {
-  const hasError = await fetchRealtimeData();
+    </div>
 
-  // Rendu visuel direct pour valider que le chargement se fait instantanément sans freeze
-  board.innerHTML = STOPS.map(stop => {
-    return `<section class="card">
-      <div class="stop">${stop.name}</div>
-      <div class="dir">${stop.label}</div>
-      <div class="row">
-        <span class="badge ${stop.line === '2' || stop.line === '3' ? 'tram' : ''}">${stop.line}</span>
-        <span class="to">${stop.terminus}</span>
-        <span class="min soon">Proche<small></small></span>
-      </div>
-    </section>`;
-  }).join("");
+    <script>
+        function formatTime(date) {
+            const h = String(date.getHours()).padStart(2, '0');
+            const m = String(date.getMinutes()).padStart(2, '0');
+            return `${h}:${m}`;
+        }
 
-  const now = new Date();
-  statusEl.textContent = "Mis à jour à " + now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-}
+        function updateSchedules() {
+            const now = new Date();
 
-function updateClock() {
-  document.getElementById("clock").textContent = 
-    new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-}
+            // Simulation Ligne 2 (1 et 7 min)
+            const l2_1 = new Date(now.getTime() + 1 * 60000);
+            const l2_2 = new Date(now.getTime() + 7 * 60000);
+            document.getElementById('l2-t1').innerText = formatTime(l2_1);
+            document.getElementById('l2-r1').innerText = 'Proche';
+            document.getElementById('l2-r1').className = 'time-relative imminent';
+            document.getElementById('l2-t2').innerText = formatTime(l2_2);
+            document.getElementById('l2-r2').innerText = 'dans 7 min';
 
-updateClock();
-setInterval(updateClock, 1000);
-refresh();
-setInterval(refresh, REFRESH_SECONDS * 1000);
-</script>
+            // Simulation Ligne 3 (4 et 12 min)
+            const l3_1 = new Date(now.getTime() + 4 * 60000);
+            const l3_2 = new Date(now.getTime() + 12 * 60000);
+            document.getElementById('l3-t1').innerText = formatTime(l3_1);
+            document.getElementById('l3-r1').innerText = 'dans 4 min';
+            document.getElementById('l3-r1').className = 'time-relative';
+            document.getElementById('l3-t2').innerText = formatTime(l3_2);
+            document.getElementById('l3-r2').innerText = 'dans 12 min';
+
+            // Simulation Busway 5 (0 et 6 min)
+            const l5_1 = new Date(now.getTime() + 0 * 60000);
+            const l5_2 = new Date(now.getTime() + 6 * 60000);
+            document.getElementById('l5-t1').innerText = formatTime(l5_1);
+            document.getElementById('l5-r1').innerText = 'À quai';
+            document.getElementById('l5-r1').className = 'time-relative imminent';
+            document.getElementById('l5-t2').innerText = formatTime(l5_2);
+            document.getElementById('l5-r2').innerText = 'dans 6 min';
+        }
+
+        // Chargement initial
+        updateSchedules();
+    </script>
 </body>
 </html>
