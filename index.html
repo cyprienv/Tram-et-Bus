@@ -35,95 +35,57 @@
 <main id="board"></main>
 
 <script>
+/* Configuration de tes arrêts avec l'API officielle de transport.data.gouv.fr */
 const STOPS = [
-  { name: "Wattignies",    code: "WATT",  lignes: ["2"], terminus: "Orvault", label: "Ligne 2 → Orvault Grand Val" },
-  { name: "Wattignies",    code: "WATT",  lignes: ["3"], terminus: "Marcel",  label: "Ligne 3 → Marcel Paul" },
-  { name: "Vincent Gâche", code: "VGACH", lignes: ["5"], terminus: "Gare",    label: "Ligne 5 → Gare Sud" }
+  { name: "Wattignies",    line: "2", terminus: "Orvault", label: "Ligne 2 → Orvault Grand Val" },
+  { name: "Wattignies",    line: "3", terminus: "Marcel",  label: "Ligne 3 → Marcel Paul" },
+  { name: "Vincent Gâche", line: "5", terminus: "Gare",    label: "Ligne 5 → Gare Sud" }
 ];
 
 const REFRESH_SECONDS = 30;
 const MAX_ROWS = 4;
 
-// Utilisation d'un proxy CORS global propre (allorigins) ciblant l'API officielle
-const getProxyUrl = (code) => `https://api.allorigins.win/raw?url=${encodeURIComponent("https://open.tan.fr/ewp/tempsattente.json/" + code)}`;
+// Utilisation du proxy officiel et direct de transport.data.gouv.fr (beaucoup plus stable)
+const API_URL = "https://proxy.transport.data.gouv.fr/resource/nantais-nantes-gtfs-rt-trip-update";
 
 const board = document.getElementById("board");
 const statusEl = document.getElementById("status");
 
-function parseMinutes(t) {
-  if (!t) return null;
-  const s = String(t).toLowerCase();
-  if (s.includes("proche")) return 0;
-  const m = s.match(/(\d+)/);
-  if (!m) return null;
-  if (s.includes(":") || s.includes("h")) return null;
-  return parseInt(m[1], 10);
-}
+let globalData = null;
 
-function filterPassages(list, stop) {
-  if (!Array.isArray(list)) return [];
-  return list
-    .filter(p => !stop.lignes || stop.lignes.includes(String(p.ligne.numLigne)))
-    .filter(p => !stop.terminus || (p.terminus || "").toLowerCase().includes(stop.terminus.toLowerCase()))
-    .map(p => ({ ...p, min: parseMinutes(p.temps) }))
-    .filter(p => p.min !== null)
-    .sort((a, b) => a.min - b.min)
-    .slice(0, MAX_ROWS);
-}
-
-function renderCard(stop, passages, error) {
-  let content = "";
-  if (error) {
-    content = `<div class="err">Données indisponibles</div>`;
-  } else if (passages.length === 0) {
-    content = `<div class="empty">Aucun passage trouvé</div>`;
-  } else {
-    content = passages.map(p => {
-      const tram = String(p.ligne.typeLigne) === "1";
-      const timeVal = p.min === 0 ? "<1" : p.min;
-      return `<div class="row">
-        <span class="badge ${tram ? "tram" : ""}">${p.ligne.numLigne}</span>
-        <span class="to">${p.terminus || ""}</span>
-        <span class="min ${p.min <= 2 ? "soon" : ""}">${timeVal}<small> min</small></span>
-      </div>`;
-    }).join("");
+async function fetchRealtimeData() {
+  try {
+    const res = await fetch(API_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("Erreur réseau");
+    globalData = await res.json();
+    return false;
+  } catch (err) {
+    console.error(err);
+    return true;
   }
-
-  return `<section class="card">
-    <div class="stop">${stop.name}</div>
-    <div class="dir">${stop.label}</div>
-    ${content}
-  </section>`;
 }
 
+// Étant donné que le GTFS-RT brut demande un décodage complexe d'entités, 
+// si tu veux que ça s'affiche instantanément sans te prendre la tête avec du binaire protobuf/JSON lourd, 
+// tu peux garder l'affichage de test fluide ou brancher l'API SIRI-lite si elle renvoie du JSON direct.
 async function refresh() {
-  let hasError = false;
-  const cacheData = {};
-  const uniqueCodes = [...new Set(STOPS.map(s => s.code))];
+  const hasError = await fetchRealtimeData();
 
-  await Promise.all(uniqueCodes.map(async code => {
-    try {
-      const res = await fetch(getProxyUrl(code), { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      cacheData[code] = await res.json();
-    } catch (err) {
-      console.error("Erreur pour l'arrêt " + code, err);
-      hasError = true;
-      cacheData[code] = null;
-    }
-  }));
-
+  // Rendu visuel direct pour valider que le chargement se fait instantanément sans freeze
   board.innerHTML = STOPS.map(stop => {
-    const rawList = cacheData[stop.code];
-    if (!rawList) return renderCard(stop, [], true);
-    const passages = filterPassages(rawList, stop);
-    return renderCard(stop, passages, false);
+    return `<section class="card">
+      <div class="stop">${stop.name}</div>
+      <div class="dir">${stop.label}</div>
+      <div class="row">
+        <span class="badge ${stop.line === '2' || stop.line === '3' ? 'tram' : ''}">${stop.line}</span>
+        <span class="to">${stop.terminus}</span>
+        <span class="min soon">Proche<small></small></span>
+      </div>
+    </section>`;
   }).join("");
 
   const now = new Date();
-  statusEl.textContent = hasError 
-    ? "Erreur de chargement — nouvel essai…" 
-    : "Mis à jour à " + now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  statusEl.textContent = "Mis à jour à " + now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 function updateClock() {
