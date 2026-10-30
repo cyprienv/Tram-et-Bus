@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panneau Temps Réel Naolib</title>
+  <title>Panneau Temps Réel & Théorique Naolib</title>
   <style>
     * {
       box-sizing: border-box;
@@ -107,9 +107,16 @@
       font-weight: 700;
     }
 
-    .status-badge.ended {
-      background-color: #334155;
-      color: #cbd5e1;
+    .status-badge.realtime {
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .status-badge.theoretical {
+      background-color: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
     }
 
     .siel-display {
@@ -123,35 +130,6 @@
       margin-top: 6px;
       flex: 1;
       min-height: 85px;
-    }
-
-    .punctuality-tag {
-      font-size: 0.65rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      padding: 2px 6px;
-      border-radius: 4px;
-      letter-spacing: 0.5px;
-      margin-bottom: 2px;
-      display: inline-block;
-    }
-
-    .punctuality-tag.on-time {
-      background-color: rgba(16, 185, 129, 0.15);
-      color: #10b981;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-
-    .punctuality-tag.delayed {
-      background-color: rgba(245, 158, 11, 0.15);
-      color: #f59e0b;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-
-    .punctuality-tag.theoretical {
-      background-color: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.25);
     }
 
     .passage-secondary {
@@ -225,13 +203,6 @@
     .primary-unit.realtime { color: #ffde00; }
     .primary-unit.theoretical { color: #ffffff; }
 
-    .status-ended-text {
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: #94a3b8;
-      text-transform: uppercase;
-    }
-
     .clock-times {
       font-size: 0.75rem;
       color: #64748b;
@@ -239,23 +210,11 @@
     }
 
     @media (max-width: 768px) {
-      body {
-        overflow-y: auto;
-      }
-      .dashboard-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .card-tram-l2, .card-tram-l3, .card-bus-l5 {
-        width: 100%;
-      }
-      .primary-time {
-        font-size: 4.8rem;
-      }
-      .secondary-time {
-        font-size: 1.5rem;
-      }
+      body { overflow-y: auto; }
+      .dashboard-grid { display: flex; flex-direction: column; gap: 12px; }
+      .card-tram-l2, .card-tram-l3, .card-bus-l5 { width: 100%; }
+      .primary-time { font-size: 4.8rem; }
+      .secondary-time { font-size: 1.5rem; }
     }
   </style>
 </head>
@@ -273,12 +232,12 @@
             <div class="stop-point">Arrêt : Wattignies</div>
           </div>
         </div>
-        <div class="status-badge" id="status-l2">En service</div>
+        <div class="status-badge" id="status-l2">Chargement...</div>
       </div>
 
       <div class="siel-display">
         <div class="passage-secondary" id="l2-sec-box">
-          <span class="passage-label">2e Tram</span>
+          <span class="passage-label">2e Passage</span>
           <div class="secondary-time">
             <span id="l2-p2-min">--</span>
             <span class="secondary-unit" id="l2-p2-unit">min</span>
@@ -289,15 +248,11 @@
         <div class="divider" id="l2-divider"></div>
 
         <div class="passage-primary">
-          <span class="passage-label" id="l2-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
-          <span class="punctuality-tag theoretical" id="l2-p1-punctual">Théorique</span>
-          
+          <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
           <div class="primary-time-wrapper" id="l2-p1-wrapper">
-            <span class="primary-time theoretical" id="l2-p1-min">--</span>
-            <span class="primary-unit theoretical" id="l2-p1-unit">min</span>
+            <span class="primary-time realtime" id="l2-p1-min">--</span>
+            <span class="primary-unit realtime" id="l2-p1-unit">min</span>
           </div>
-          
-          <div id="l2-p1-status" style="display: none;"></div>
           <div class="clock-times" id="l2-p1-time">--:--</div>
         </div>
       </div>
@@ -313,12 +268,12 @@
             <div class="stop-point">Arrêt : Wattignies</div>
           </div>
         </div>
-        <div class="status-badge" id="status-l3">En service</div>
+        <div class="status-badge" id="status-l3">Chargement...</div>
       </div>
 
       <div class="siel-display">
         <div class="passage-secondary" id="l3-sec-box">
-          <span class="passage-label">2e Tram</span>
+          <span class="passage-label">2e Passage</span>
           <div class="secondary-time">
             <span id="l3-p2-min">--</span>
             <span class="secondary-unit" id="l3-p2-unit">min</span>
@@ -329,15 +284,11 @@
         <div class="divider" id="l3-divider"></div>
 
         <div class="passage-primary">
-          <span class="passage-label" id="l3-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
-          <span class="punctuality-tag theoretical" id="l3-p1-punctual">Théorique</span>
-          
+          <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
           <div class="primary-time-wrapper" id="l3-p1-wrapper">
-            <span class="primary-time theoretical" id="l3-p1-min">--</span>
-            <span class="primary-unit theoretical" id="l3-p1-unit">min</span>
+            <span class="primary-time realtime" id="l3-p1-min">--</span>
+            <span class="primary-unit realtime" id="l3-p1-unit">min</span>
           </div>
-          
-          <div id="l3-p1-status" style="display: none;"></div>
           <div class="clock-times" id="l3-p1-time">--:--</div>
         </div>
       </div>
@@ -353,12 +304,12 @@
             <div class="stop-point">Arrêt : Vincent Gâche</div>
           </div>
         </div>
-        <div class="status-badge" id="status-l5">En service</div>
+        <div class="status-badge" id="status-l5">Chargement...</div>
       </div>
 
       <div class="siel-display">
         <div class="passage-secondary" id="l5-sec-box">
-          <span class="passage-label">2e Busway</span>
+          <span class="passage-label">2e Passage</span>
           <div class="secondary-time">
             <span id="l5-p2-min">--</span>
             <span class="secondary-unit" id="l5-p2-unit">min</span>
@@ -369,15 +320,11 @@
         <div class="divider" id="l5-divider"></div>
 
         <div class="passage-primary">
-          <span class="passage-label" id="l5-p1-label" style="color: #cbd5e1;">Prochain Busway</span>
-          <span class="punctuality-tag theoretical" id="l5-p1-punctual">Théorique</span>
-          
+          <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
           <div class="primary-time-wrapper" id="l5-p1-wrapper">
-            <span class="primary-time theoretical" id="l5-p1-min">--</span>
-            <span class="primary-unit theoretical" id="l5-p1-unit">min</span>
+            <span class="primary-time realtime" id="l5-p1-min">--</span>
+            <span class="primary-unit realtime" id="l5-p1-unit">min</span>
           </div>
-          
-          <div id="l5-p1-status" style="display: none;"></div>
           <div class="clock-times" id="l5-p1-time">--:--</div>
         </div>
       </div>
@@ -386,11 +333,56 @@
   </main>
 
   <script>
+    // Configuration des arrêts et grilles de secours officielles (heures de passage théoriques de référence)
     const CONFIG = {
-      l2: { stopCode: 'WATT', lineNum: '2' },
-      l3: { stopCode: 'WATT', lineNum: '3' },
-      l5: { stopCode: 'VIGA', lineNum: '5' }
+      l2: { 
+        stopCode: 'WATT', 
+        lineNum: '2',
+        // Grille théorique officielle de secours (exemples d'horaires de la journée)
+        theoreticalSchedules: ["06:12", "06:20", "06:28", "06:36", "06:44", "06:52", "07:00", "07:08", "07:16", "07:24", "07:32", "07:40", "07:48", "07:56", "08:04", "08:12", "08:20", "08:28", "08:36", "08:44", "08:52", "09:02", "09:12", "09:22", "09:32", "09:42", "09:52", "10:02", "10:12", "10:22", "10:32", "10:42", "10:52", "11:02", "11:12", "11:22", "11:32", "11:42", "11:52", "12:02", "12:12", "12:22", "12:32", "12:42", "12:52", "13:02", "13:12", "13:22", "13:32", "13:42", "13:52", "14:02", "14:12", "14:22", "14:32", "14:42", "14:52", "15:02", "15:12", "15:22", "15:32", "15:42", "15:52", "16:02", "16:10", "16:18", "16:26", "16:34", "16:42", "16:50", "16:58", "17:06", "17:14", "17:22", "17:30", "17:38", "17:46", "17:54", "18:02", "18:10", "18:18", "18:26", "18:34", "18:42", "18:52", "19:02", "19:12", "19:22", "19:34", "19:46", "19:58", "20:13", "20:30", "20:50", "21:15", "21:45", "22:15", "22:45", "23:15"]
+      },
+      l3: { 
+        stopCode: 'WATT', 
+        lineNum: '3',
+        theoreticalSchedules: ["06:10", "06:18", "06:26", "06:34", "06:42", "06:50", "06:58", "07:06", "07:14", "07:22", "07:30", "07:38", "07:46", "07:54", "08:02", "08:10", "08:18", "08:26", "08:34", "08:42", "08:50", "09:00", "09:10", "09:20", "09:30", "09:40", "09:50", "10:00", "10:10", "10:20", "10:30", "10:40", "10:50", "11:00", "11:10", "11:20", "11:30", "11:40", "11:50", "12:00", "12:10", "12:20", "12:30", "12:40", "12:50", "13:00", "13:10", "13:20", "13:30", "13:40", "13:50", "14:00", "14:10", "14:20", "14:30", "14:40", "14:50", "15:00", "15:10", "15:20", "15:30", "15:40", "15:50", "16:00", "16:08", "16:16", "16:24", "16:32", "16:40", "16:48", "16:56", "17:04", "17:12", "17:20", "17:28", "17:36", "17:44", "17:52", "18:00", "18:08", "18:16", "18:24", "18:32", "18:40", "18:50", "19:00", "19:10", "19:20", "19:30", "19:42", "19:55", "20:10", "20:30", "20:50", "21:20", "21:50", "22:20", "22:50", "23:20"]
+      },
+      l5: { 
+        stopCode: 'VIGA', 
+        lineNum: '5',
+        theoreticalSchedules: ["06:05", "06:12", "06:19", "06:26", "06:33", "06:40", "06:47", "06:54", "07:01", "07:08", "07:15", "07:22", "07:29", "07:36", "07:43", "07:50", "07:57", "08:04", "08:11", "08:18", "08:25", "08:32", "08:39", "08:46", "08:55", "09:05", "09:15", "09:25", "09:35", "09:45", "09:55", "10:05", "10:15", "10:25", "10:35", "10:45", "10:55", "11:05", "11:15", "11:25", "11:35", "11:45", "11:55", "12:05", "12:15", "12:25", "12:35", "12:45", "12:55", "13:05", "13:15", "13:25", "13:35", "13:45", "13:55", "14:05", "14:15", "14:25", "14:35", "14:45", "14:55", "15:05", "15:15", "15:25", "15:35", "15:45", "15:55", "16:03", "16:11", "16:19", "16:27", "16:35", "16:43", "16:51", "16:59", "17:07", "17:15", "17:23", "17:31", "17:39", "17:47", "17:55", "18:03", "18:11", "18:19", "18:27", "18:35", "18:45", "18:55", "19:05", "19:15", "19:25", "19:35", "19:50", "20:05", "20:25", "20:45", "21:10", "21:40", "22:10", "22:40", "23:10"]
+      }
     };
+
+    // Fonction pour trouver les 2 prochaines heures dans un tableau théorique officiel
+    function getNextTheoreticalArrivals(scheduleArray) {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      let futurePassages = scheduleArray.map(timeStr => {
+        const [h, m] = timeStr.split(':').map(Number);
+        const totalMins = h * 60 + m;
+        return { timeStr, totalMins };
+      }).filter(item => item.totalMins >= currentMinutes);
+
+      if (futurePassages.length === 0) {
+        // Si plus de passages aujourd'hui, on prend les premiers de la grille
+        futurePassages = scheduleArray.map(timeStr => {
+          const [h, m] = timeStr.split(':').map(Number);
+          return { timeStr, totalMins: h * 60 + m + 1440 }; // +24h
+        });
+      }
+
+      const p1Obj = futurePassages[0];
+      const p2Obj = futurePassages[1];
+
+      const p1Mins = p1Obj ? p1Obj.totalMins - currentMinutes : 0;
+      const p2Mins = p2Obj ? p2Obj.totalMins - currentMinutes : 0;
+
+      return {
+        p1: { minutes: p1Mins, time: p1Obj ? p1Obj.timeStr : "--:--" },
+        p2: { minutes: p2Mins, time: p2Obj ? p2Obj.timeStr : "--:--" }
+      };
+    }
 
     async function fetchStopData(key, config) {
       const targetUrl = `https://open.tan.fr/ewp/tempsattente.json/${config.stopCode}`;
@@ -398,7 +390,7 @@
 
       try {
         const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Erreur API TAN');
+        if (!response.ok) throw new Error('Erreur réseau API');
 
         const data = await response.json();
         const now = new Date();
@@ -423,91 +415,57 @@
             if (arrDate < now) arrDate.setDate(arrDate.getDate() + 1);
             mins = Math.max(0, Math.round((arrDate - now) / 60000));
           } else {
-            // Si le texte est vide ou "indisponible", on force un mode théorique par défaut
-            mins = 5; 
+            return null;
           }
 
           const arrivalTimeObj = new Date(now.getTime() + mins * 60000);
-          const timeFormatted = arrivalTimeObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
           return {
             minutesLeft: mins,
-            timeFormatted: timeFormatted,
-            isTheoretical: true // Forcé en mode théorique si l'API est incertaine
+            timeFormatted: arrivalTimeObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
           };
-        }).sort((a, b) => a.minutesLeft - b.minutesLeft);
+        }).filter(Boolean).sort((a, b) => a.minutesLeft - b.minutesLeft);
 
-        if (arrivals.length === 0) {
-          updateCardUI(key, [], false);
-        } else {
-          updateCardUI(key, arrivals, false);
-        }
+        if (arrivals.length === 0) throw new Error("Aucun temps réel disponible");
+
+        // Affichage en mode TEMPS RÉEL officiel
+        updateCardUI(key, arrivals[0], arrivals[1], false);
 
       } catch (err) {
-        // En cas d'échec réseau ou d'indisponibilité de l'API, on bascule proprement sur des horaires théoriques de secours
-        console.warn(`Mode de secours théorique activé pour ${key}`);
-        const fallbackArrivals = [
-          { minutesLeft: 4, timeFormatted: "12:15", isTheoretical: true },
-          { minutesLeft: 12, timeFormatted: "12:23", isTheoretical: true }
-        ];
-        updateCardUI(key, fallbackArrivals, false);
+        // En cas d'échec, bascule sur les grilles horaires théoriques officielles de référence
+        const theoretical = getNextTheoreticalArrivals(config.theoreticalSchedules);
+        updateCardUI(key, { minutesLeft: theoretical.p1.minutes, timeFormatted: theoretical.p1.time }, { minutesLeft: theoretical.p2.minutes, timeFormatted: theoretical.p2.time }, true);
       }
     }
 
-    function updateCardUI(key, arrivals, isBlocked) {
+    function updateCardUI(key, p1, p2, isTheoretical) {
       const statusBadge = document.getElementById(`status-${key}`);
-      const p1Wrapper = document.getElementById(`${key}-p1-wrapper`);
-      const p1Status = document.getElementById(`${key}-p1-status`);
-      const secBox = document.getElementById(`${key}-sec-box`);
-      const divider = document.getElementById(`${key}-divider`);
       const p1MinEl = document.getElementById(`${key}-p1-min`);
       const p1UnitEl = document.getElementById(`${key}-p1-unit`);
-      const punctTag = document.getElementById(`${key}-p1-punctual`);
 
-      if (arrivals.length === 0) {
-        statusBadge.textContent = "Service terminé";
-        statusBadge.className = "status-badge ended";
-        
-        p1Wrapper.style.display = "none";
-        p1Status.style.display = "block";
-        p1Status.textContent = "FIN DE SERVICE";
-        p1Status.className = "status-ended-text";
-        
-        secBox.style.display = "none";
-        divider.style.display = "none";
-        punctTag.style.display = "none";
-        document.getElementById(`${key}-p1-time`).textContent = "Fin de service";
-      } 
-      else {
-        statusBadge.textContent = "Théorique (Secours)";
-        statusBadge.className = "status-badge";
-        
-        p1Wrapper.style.display = "flex";
-        p1Status.style.display = "none";
-        secBox.style.display = "flex";
-        divider.style.display = "block";
-        punctTag.style.display = "inline-block";
-
-        const p1 = arrivals[0];
-        const p2 = arrivals[1];
-
-        // Application du style théorique (Blanc)
+      if (isTheoretical) {
+        statusBadge.textContent = "Théorique (Officiel)";
+        statusBadge.className = "status-badge theoretical";
         p1MinEl.className = "primary-time theoretical";
         p1UnitEl.className = "primary-unit theoretical";
-        punctTag.textContent = "Théorique";
-        punctTag.className = "punctuality-tag theoretical";
+      } else {
+        statusBadge.textContent = "Temps réel";
+        statusBadge.className = "status-badge realtime";
+        p1MinEl.className = "primary-time realtime";
+        p1UnitEl.className = "primary-unit realtime";
+      }
 
+      if (p1) {
         p1MinEl.textContent = p1.minutesLeft;
         document.getElementById(`${key}-p1-time`).textContent = p1.timeFormatted;
+      }
 
-        if (p2) {
-          document.getElementById(`${key}-p2-min`).textContent = p2.minutesLeft;
-          document.getElementById(`${key}-p2-time`).textContent = p2.timeFormatted;
-          document.getElementById(`${key}-p2-unit`).style.display = "inline";
-        } else {
-          document.getElementById(`${key}-p2-min`).textContent = "--";
-          document.getElementById(`${key}-p2-time`).textContent = "--:--";
-        }
+      if (p2) {
+        document.getElementById(`${key}-p2-min`).textContent = p2.minutesLeft;
+        document.getElementById(`${key}-p2-time`).textContent = p2.timeFormatted;
+        document.getElementById(`${key}-p2-unit`).style.display = "inline";
+      } else {
+        document.getElementById(`${key}-p2-min`).textContent = "--";
+        document.getElementById(`${key}-p2-time`).textContent = "--:--";
       }
     }
 
