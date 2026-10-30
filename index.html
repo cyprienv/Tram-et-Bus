@@ -37,15 +37,15 @@
 <script>
 /* ============ CONFIGURATION ============
    Réseau : TAN (Nantes) via open.tan.fr.
-   - nom      : nom de l'arrêt (le code est retrouvé automatiquement)
+   - code     : code de l'arrêt TAN
    - lignes   : lignes à garder, ex. ["2"] → null = toutes
    - terminus : mot-clé de la direction, ex. "Orvault" → null = aucune
    - sens     : 1 ou 2 si besoin de forcer (sinon null)
 */
 const STOPS = [
-  { name: "Wattignies",    nom: "Wattignies",    lignes: ["2"], terminus: "Orvault",    sens: null, label: "Ligne 2 → Orvault" },
-  { name: "Wattignies",    nom: "Wattignies",    lignes: ["3"], terminus: "Marcel Paul", sens: null, label: "Ligne 3 → Marcel Paul" },
-  { name: "Vincent Gâche", nom: "Vincent Gâche", lignes: ["5"], terminus: "Gare Sud",   sens: null, label: "Ligne 5 → Gare Sud" }
+  { name: "Wattignies",    code: "WATT",  lignes: ["2"], terminus: "Orvault",     sens: null, label: "Ligne 2 → Orvault" },
+  { name: "Wattignies",    code: "WATT",  lignes: ["3"], terminus: "Marcel", sens: null, label: "Ligne 3 → Marcel Paul" },
+  { name: "Vincent Gâche", code: "VGACH", lignes: ["5"], terminus: "Gare",        sens: null, label: "Ligne 5 → Gare Sud" }
 ];
 const REFRESH_SECONDS = 30;
 const MAX_ROWS = 4;
@@ -98,31 +98,10 @@ function render(stop, passages, error) {
   </section>`;
 }
 
-const norm = t => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-let ARRETS = null;
-
-async function loadArrets() {
-  if (ARRETS) return;
-  const r = await fetch("https://open.tan.fr/ewp/arrets.json");
-  if (!r.ok) throw new Error(r.status);
-  ARRETS = await r.json();
-}
-
-function codeFor(nom) {
-  const n = norm(nom);
-  const hit = ARRETS.find(a => norm(a.libelle) === n) || ARRETS.find(a => norm(a.libelle).includes(n));
-  return hit ? hit.codeLieu : null;
-}
-
 async function refresh() {
   let failed = false;
-  try { await loadArrets(); } catch (e) { failed = true; }
-
-  const codes = {};
-  STOPS.forEach(s => { codes[s.nom] = ARRETS ? codeFor(s.nom) : null; });
-
   const data = {};
-  await Promise.all([...new Set(Object.values(codes).filter(Boolean))].map(async c => {
+  await Promise.all([...new Set(STOPS.map(s => s.code))].map(async c => {
     try {
       const r = await fetch(API + encodeURIComponent(c), { cache: "no-store" });
       if (!r.ok) throw new Error(r.status);
@@ -130,10 +109,9 @@ async function refresh() {
     } catch (e) { data[c] = null; failed = true; }
   }));
 
-  board.innerHTML = STOPS.map(s => {
-    const d = data[codes[s.nom]];
-    return d ? render(s, filterPassages(d, s), false) : render(s, [], true);
-  }).join("");
+  board.innerHTML = STOPS.map(s =>
+    data[s.code] ? render(s, filterPassages(data[s.code], s), false) : render(s, [], true)
+  ).join("");
 
   const now = new Date();
   statusEl.textContent = failed
