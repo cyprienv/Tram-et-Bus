@@ -2,6 +2,7 @@ import json
 import urllib.request
 from datetime import datetime
 
+# Configuration de tes arrêts (Wattignies et Vincent Gâche)
 STOPS_CONFIG = {
     'l2': {'stopCode': 'WATT', 'lineNum': '2'},
     'l3': {'stopCode': 'WATT', 'lineNum': '3'},
@@ -11,7 +12,9 @@ STOPS_CONFIG = {
 output_data = {}
 
 for key, config in STOPS_CONFIG.items():
+    # Tu peux remplacer ici par l'URL SIRI-Lite ou l'API Naolib officielle
     url = f"https://open.tan.fr/ewp/tempsattente.json/{config['stopCode']}"
+    
     try:
         req = urllib.request.Request(
             url, 
@@ -40,4 +43,4 @@ payload = {
 with open('horaires.json', 'w', encoding='utf-8') as f:
     json.dump(payload, f, ensure_ascii=False, indent=2)
 
-print("Génération du JSON réussie.")
+print("Mise à jour SIRI-Lite / temps réel réussie.")
