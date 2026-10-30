@@ -382,7 +382,7 @@
 
     async function fetchStopData(key, config) {
       const targetUrl = `https://open.tan.fr/ewp/tempsattente.json/${config.stopCode}`;
-      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+      const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
 
       try {
         const response = await fetch(proxyUrl);
