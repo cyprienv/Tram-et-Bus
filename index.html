@@ -134,6 +134,29 @@
       min-height: 85px;
     }
 
+    /* Badges de ponctualité (À l'heure / En retard) */
+    .punctuality-tag {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .punctuality-tag.on-time {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .punctuality-tag.delayed {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
     /* 2e passage (à gauche, blanc, plus petit) */
     .passage-secondary {
       display: flex;
@@ -245,6 +268,7 @@
       <div class="siel-display">
         <div class="passage-secondary" id="l2-sec-box">
           <span class="passage-label">2e Tram</span>
+          <span class="punctuality-tag on-time" id="l2-p2-punctual">À l'heure</span>
           <div class="secondary-time">
             <span id="l2-p2-min">--</span>
             <span class="secondary-unit" id="l2-p2-unit">min</span>
@@ -256,6 +280,7 @@
 
         <div class="passage-primary">
           <span class="passage-label" id="l2-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
+          <span class="punctuality-tag on-time" id="l2-p1-punctual">À l'heure</span>
           
           <!-- État 1 : Normal / En service -->
           <div class="primary-time-wrapper" id="l2-p1-wrapper">
@@ -287,6 +312,7 @@
       <div class="siel-display">
         <div class="passage-secondary" id="l3-sec-box">
           <span class="passage-label">2e Tram</span>
+          <span class="punctuality-tag on-time" id="l3-p2-punctual">À l'heure</span>
           <div class="secondary-time">
             <span id="l3-p2-min">--</span>
             <span class="secondary-unit" id="l3-p2-unit">min</span>
@@ -298,6 +324,7 @@
 
         <div class="passage-primary">
           <span class="passage-label" id="l3-p1-label" style="color: #cbd5e1;">Prochain Tram</span>
+          <span class="punctuality-tag on-time" id="l3-p1-punctual">À l'heure</span>
           
           <!-- État 1 : Normal / En service -->
           <div class="primary-time-wrapper" id="l3-p1-wrapper">
@@ -329,6 +356,7 @@
       <div class="siel-display">
         <div class="passage-secondary" id="l5-sec-box">
           <span class="passage-label">2e Busway</span>
+          <span class="punctuality-tag on-time" id="l5-p2-punctual">À l'heure</span>
           <div class="secondary-time">
             <span id="l5-p2-min">--</span>
             <span class="secondary-unit" id="l5-p2-unit">min</span>
@@ -340,6 +368,7 @@
 
         <div class="passage-primary">
           <span class="passage-label" id="l5-p1-label" style="color: #cbd5e1;">Prochain Busway</span>
+          <span class="punctuality-tag on-time" id="l5-p1-punctual">À l'heure</span>
           
           <!-- État 1 : Normal / En service -->
           <div class="primary-time-wrapper" id="l5-p1-wrapper">
@@ -403,29 +432,35 @@
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
 
-        // Détection si la ligne est bloquée / perturbée
         const isBlocked = xmlDoc.getElementsByTagName('SituationRef').length > 0;
-        
         const visits = Array.from(xmlDoc.getElementsByTagName('MonitoredStopVisit'));
         const now = new Date();
 
         const arrivals = visits
           .map(visit => {
-            const timeStr = visit.getElementsByTagName('ExpectedArrivalTime')[0]?.textContent ||
-                            visit.getElementsByTagName('AimedArrivalTime')[0]?.textContent;
-            if (!timeStr) return null;
-            const arrivalDate = new Date(timeStr);
-            const diffMin = Math.max(0, Math.round((arrivalDate - now) / 60000));
+            const expectedStr = visit.getElementsByTagName('ExpectedArrivalTime')[0]?.textContent;
+            const aimedStr = visit.getElementsByTagName('AimedArrivalTime')[0]?.textContent || expectedStr;
+
+            if (!aimedStr && !expectedStr) return null;
+
+            const aimedDate = new Date(aimedStr);
+            const expectedDate = new Date(expectedStr || aimedStr);
+
+            const diffMin = Math.max(0, Math.round((expectedDate - now) / 60000));
+            // Retard calculé si l'estimation dépasse la théorie de plus d'1 minute
+            const delayMin = Math.round((expectedDate - aimedDate) / 60000);
+            const isDelayed = delayMin > 1;
+
             return {
-              timeFormatted: arrivalDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-              minutesLeft: diffMin
+              timeFormatted: expectedDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+              minutesLeft: diffMin,
+              isDelayed: isDelayed
             };
           })
           .filter(item => item !== null)
           .sort((a, b) => a.minutesLeft - b.minutesLeft);
 
         if (arrivals.length === 0 && !isBlocked) {
-          // Si l'API renvoie une liste vide en journée, fallback dynamique
           const fallback = generateMockArrivals();
           updateCardUI(key, fallback, false);
         } else {
@@ -433,7 +468,7 @@
         }
 
       } catch (err) {
-        console.warn(`Fallback dynamique activé pour ${key} suite à une restriction réseau.`);
+        console.warn(`Fallback dynamique activé pour ${key}`);
         const fallback = generateMockArrivals();
         updateCardUI(key, fallback, false);
       }
@@ -447,10 +482,26 @@
       const t1 = new Date(now.getTime() + m1 * 60000);
       const t2 = new Date(now.getTime() + m2 * 60000);
 
+      // Simulation aléatoire d'un retard pour tester l'affichage
+      const mockDelayed1 = Math.random() > 0.6;
+      const mockDelayed2 = Math.random() > 0.7;
+
       return [
-        { minutesLeft: m1, timeFormatted: t1.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) },
-        { minutesLeft: m2, timeFormatted: t2.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) }
+        { minutesLeft: m1, timeFormatted: t1.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), isDelayed: mockDelayed1 },
+        { minutesLeft: m2, timeFormatted: t2.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), isDelayed: mockDelayed2 }
       ];
+    }
+
+    function updatePunctualityTag(elementId, isDelayed) {
+      const tag = document.getElementById(elementId);
+      if (!tag) return;
+      if (isDelayed) {
+        tag.textContent = "En retard";
+        tag.className = "punctuality-tag delayed";
+      } else {
+        tag.textContent = "À l'heure";
+        tag.className = "punctuality-tag on-time";
+      }
     }
 
     function updateCardUI(key, arrivals, isBlocked) {
@@ -472,6 +523,7 @@
         
         secBox.style.display = "none";
         divider.style.display = "none";
+        document.getElementById(`${key}-p1-punctual`).style.display = "none";
         document.getElementById(`${key}-p1-time`).textContent = "--:--";
       } 
       // ÉTAT 3 : DERNIER SERVICE PASSÉ
@@ -486,6 +538,7 @@
         
         secBox.style.display = "none";
         divider.style.display = "none";
+        document.getElementById(`${key}-p1-punctual`).style.display = "none";
         document.getElementById(`${key}-p1-time`).textContent = "Fin de service";
       } 
       // ÉTAT 1 : EN SERVICE
@@ -497,20 +550,27 @@
         p1Status.style.display = "none";
         secBox.style.display = "flex";
         divider.style.display = "block";
+        document.getElementById(`${key}-p1-punctual`).style.display = "inline-block";
 
         const p1 = arrivals[0];
         const p2 = arrivals[1];
 
+        // Mettre à jour le 1er passage
         document.getElementById(`${key}-p1-min`).textContent = p1.minutesLeft;
         document.getElementById(`${key}-p1-time`).textContent = p1.timeFormatted;
+        updatePunctualityTag(`${key}-p1-punctual`, p1.isDelayed);
 
+        // Mettre à jour le 2e passage
         if (p2) {
           document.getElementById(`${key}-p2-min`).textContent = p2.minutesLeft;
           document.getElementById(`${key}-p2-time`).textContent = p2.timeFormatted;
           document.getElementById(`${key}-p2-unit`).style.display = "inline";
+          document.getElementById(`${key}-p2-punctual`).style.display = "inline-block";
+          updatePunctualityTag(`${key}-p2-punctual`, p2.isDelayed);
         } else {
           document.getElementById(`${key}-p2-min`).textContent = "--";
           document.getElementById(`${key}-p2-time`).textContent = "--:--";
+          document.getElementById(`${key}-p2-punctual`).style.display = "none";
         }
       }
     }
