@@ -368,22 +368,18 @@
     }
 
     async function fetchStopData(key, config) {
-      const targetUrl = `https://open.tan.fr/ewp/tempsattente.json/${config.stopCode}`;
-      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+      // On lit le fichier JSON généré automatiquement sur GitHub sans proxy
+      const jsonUrl = './horaires.json?t=' + new Date().getTime();
 
       try {
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+        const response = await fetch(jsonUrl);
+        if (!response.ok) throw new Error("Fichier JSON non trouvé");
 
-        const data = await response.json();
+        const json = await response.json();
+        const rawData = (json.data && json.data[key]) ? json.data[key] : [];
         const now = new Date();
 
-        let lineArrivals = [];
-        if (Array.isArray(data)) {
-          lineArrivals = data.filter(item => item.ligne && String(item.ligne.numLigne) === String(config.lineNum));
-        }
-
-        let arrivals = lineArrivals.map(item => {
+        let arrivals = rawData.map(item => {
           let tempsStr = item.temps ? String(item.temps).trim().toLowerCase() : "";
           let mins = 0;
 
@@ -408,7 +404,7 @@
           };
         }).filter(Boolean).sort((a, b) => a.minutesLeft - b.minutesLeft);
 
-        if (arrivals.length === 0) throw new Error("Aucun passage trouvé");
+        if (arrivals.length === 0) throw new Error("Pas de départs en direct");
 
         updateCardUI(key, arrivals[0], arrivals[1], false);
 
