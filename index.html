@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prochains passages</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --text:#f2f4f8; --muted:#8b93a3; --accent:#4ade80; --warn:#fbbf24; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding: 12px; display: flex; flex-direction: column; }
+  header { display: flex; justify-content: space-between; align-items: baseline; color: var(--muted); font-size: 18px; margin-bottom: 10px; }
+  #clock { font-size: 28px; color: var(--text); font-weight: 600; }
+  main { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; min-height: 0; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; min-height: 0; }
+  .stop { font-size: 24px; font-weight: 700; }
+  .dir { color: var(--muted); font-size: 16px; margin: 2px 0 12px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid #262b35; }
+  .badge { min-width: 44px; text-align: center; padding: 4px 8px; border-radius: 8px; font-weight: 700; font-size: 20px; background: #2d6cdf; color: #fff; }
+  .badge.tram { background: #16a34a; }
+  .to { flex: 1; font-size: 16px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .min { font-size: 34px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .min small { font-size: 16px; font-weight: 500; color: var(--muted); }
+  .min.soon { color: var(--warn); }
+  .empty, .err { color: var(--muted); font-size: 16px; padding: 12px 0; }
+  .err { color: #f87171; }
+</style>
+</head>
+<body>
+<header>
+  <span id="status">Chargement…</span>
+  <span id="clock"></span>
+</header>
+<main id="board"></main>
+
+<script>
+/* ============ CONFIGURATION ============
+   Réseau : TAN (Nantes) via open.tan.fr.
+   - nom      : nom de l'arrêt (le code est retrouvé automatiquement)
+   - lignes   : lignes à garder, ex. ["2"] → null = toutes
+   - terminus : mot-clé de la direction, ex. "Orvault" → null = aucune
+   - sens     : 1 ou 2 si besoin de forcer (sinon null)
+*/
+const STOPS = [
+  { name: "Wattignies",    nom: "Wattignies",    lignes: ["2"], terminus: "Orvault",    sens: null, label: "Ligne 2 → Orvault" },
+  { name: "Wattignies",    nom: "Wattignies",    lignes: ["3"], terminus: "Marcel Paul", sens: null, label: "Ligne 3 → Marcel Paul" },
+  { name: "Vincent Gâche", nom: "Vincent Gâche", lignes: ["5"], terminus: "Gare Sud",   sens: null, label: "Ligne 5 → Gare Sud" }
+];
+const REFRESH_SECONDS = 30;
+const MAX_ROWS = 4;
+const API = "https://open.tan.fr/ewp/tempsattente.json/";
+/* ======================================= */
+
+const board = document.getElementById("board");
+const statusEl = document.getElementById("status");
+
+function parseMinutes(t) {
+  if (!t) return null;
+  const s = String(t).toLowerCase();
+  if (s.includes("proche")) return 0;
+  const m = s.match(/(\d+)/);
+  if (!m) return null;
+  // Format "12:34" = heure fixe, "5mn" = minutes
+  if (s.includes(":") || s.includes("h")) return null;
+  return parseInt(m[1], 10);
+}
+
+function filterPassages(list, stop) {
+  return list
+    .filter(p => stop.sens == null || Number(p.sens) === stop.sens)
+    .filter(p => !stop.lignes || stop.lignes.includes(String(p.ligne.numLigne)))
+    .filter(p => !stop.terminus || (p.terminus || "").toLowerCase().includes(stop.terminus.toLowerCase()))
+    .map(p => ({ ...p, min: parseMinutes(p.temps) }))
+    .filter(p => p.min !== null)
+    .sort((a, b) => a.min - b.min)
+    .slice(0, MAX_ROWS);
+}
+
+function render(stop, passages, error) {
+  const rows = error
+    ? `<div class="err">Données indisponibles</div>`
+    : passages.length === 0
+      ? `<div class="empty">Aucun passage prévu</div>`
+      : passages.map(p => {
+          const tram = String(p.ligne.typeLigne) === "1";
+          const label = p.min === 0 ? "<1" : p.min;
+          return `<div class="row">
+            <span class="badge ${tram ? "tram" : ""}">${p.ligne.numLigne}</span>
+            <span class="to">${p.terminus || ""}</span>
+            <span class="min ${p.min <= 2 ? "soon" : ""}">${label}<small> min</small></span>
+          </div>`;
+        }).join("");
+  return `<section class="card">
+    <div class="stop">${stop.name}</div>
+    <div class="dir">${stop.label || ""}</div>
+    ${rows}
+  </section>`;
+}
+
+const norm = t => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+let ARRETS = null;
+
+async function loadArrets() {
+  if (ARRETS) return;
+  const r = await fetch("https://open.tan.fr/ewp/arrets.json");
+  if (!r.ok) throw new Error(r.status);
+  ARRETS = await r.json();
+}
+
+function codeFor(nom) {
+  const n = norm(nom);
+  const hit = ARRETS.find(a => norm(a.libelle) === n) || ARRETS.find(a => norm(a.libelle).includes(n));
+  return hit ? hit.codeLieu : null;
+}
+
+async function refresh() {
+  let failed = false;
+  try { await loadArrets(); } catch (e) { failed = true; }
+
+  const codes = {};
+  STOPS.forEach(s => { codes[s.nom] = ARRETS ? codeFor(s.nom) : null; });
+
+  const data = {};
+  await Promise.all([...new Set(Object.values(codes).filter(Boolean))].map(async c => {
+    try {
+      const r = await fetch(API + encodeURIComponent(c), { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      data[c] = await r.json();
+    } catch (e) { data[c] = null; failed = true; }
+  }));
+
+  board.innerHTML = STOPS.map(s => {
+    const d = data[codes[s.nom]];
+    return d ? render(s, filterPassages(d, s), false) : render(s, [], true);
+  }).join("");
+
+  const now = new Date();
+  statusEl.textContent = failed
+    ? "Erreur de chargement — nouvel essai…"
+    : "Mis à jour à " + now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function tick() {
+  document.getElementById("clock").textContent =
+    new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+tick(); setInterval(tick, 1000);
+refresh(); setInterval(refresh, REFRESH_SECONDS * 1000);
+</script>
+</body>
+</html>
