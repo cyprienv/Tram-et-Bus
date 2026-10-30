@@ -20,14 +20,26 @@ for key, config in STOPS_CONFIG.items():
             headers={'User-Agent': 'Mozilla/5.0'}
         )
         with urllib.request.urlopen(req, timeout=10) as response:
-            data = json.loads(response.read().decode('utf-8'))
+            raw_data = response.read().decode('utf-8')
+            data = json.loads(raw_data)
+            
+            print(f"Données brutes reçues pour {config['stopCode']} : {raw_data[:200]}")
             
             if isinstance(data, list):
-                line_arrivals = [
-                    item for item in data 
-                    if item.get('ligne') and str(item['ligne'].get('numLigne')) == str(config['lineNum'])
-                ]
-                output_data[key] = line_arrivals
+                # Filtre plus souple qui cherche le numéro de ligne dans l'objet
+                line_arrivals = []
+                for item in data:
+                    ligne_info = item.get('ligne', {})
+                    num_ligne = str(ligne_info.get('numLigne', ''))
+                    # On accepte si le numéro correspond ou si le texte contient le chiffre
+                    if config['lineNum'] in num_ligne or config['lineNum'] == str(item.get('numLigne', '')):
+                        line_arrivals.append(item)
+                
+                # Si le filtre strict ne donne rien, on prend tout ce que l'arrêt renvoie pour voir
+                if not line_arrivals and data:
+                    output_data[key] = data
+                else:
+                    output_data[key] = line_arrivals
             else:
                 output_data[key] = []
     except Exception as e:
