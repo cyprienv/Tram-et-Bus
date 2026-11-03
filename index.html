@@ -1,463 +1,318 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panneau Temps Réel Naolib</title>
-  
-  <!-- Icônes pour les raccourcis Android / PWA -->
-  <link rel="icon" type="image/svg+xml" href="Icone.svg">
-  <link rel="apple-touch-icon" href="Icone.svg">
-  <meta name="theme-color" content="#0b0f19">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panneau Temps Réel Naolib</title>
+<!-- Icônes pour les raccourcis Android / PWA -->
+<link rel="icon" type="image/svg+xml" href="Icone.svg">
+<link rel="apple-touch-icon" href="Icone.svg">
+<meta name="theme-color" content="#0b0f19">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+body {
+    background-color: #0b0f19;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow-x: hidden;
+}
 
-    body {
-      background-color: #0b0f19;
-      color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-      overflow-x: hidden;
-    }
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+    width: 100%;
+}
 
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      gap: 10px;
-      flex: 1;
-      width: 100%;
-    }
+.card-tram-l2 { grid-column: 1 / 2; grid-row: 1 / 2; }
+.card-tram-l3 { grid-column: 2 / 3; grid-row: 1 / 2; }
+.card-bus-l5  { grid-column: 1 / 3; grid-row: 2 / 3; }
 
-    .card-tram-l2 { grid-column: 1 / 2; grid-row: 1 / 2; }
-    .card-tram-l3 { grid-column: 2 / 3; grid-row: 1 / 2; }
-    .card-bus-l5  { grid-column: 1 / 3; grid-row: 2 / 3; }
+.transit-card {
+    background-color: #141c2e;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-left: 8px solid #555;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    min-height: 140px;
+}
 
-    .transit-card {
-      background-color: #141c2e;
-      border-radius: 12px;
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      border-left: 8px solid #555;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      min-height: 140px;
-    }
+.card-l2 { border-left-color: #e30613; }
+.card-l3 { border-left-color: #009ee0; }
+.card-l5 { border-left-color: #00d2ff; }
 
-    .card-l2 { border-left-color: #e30613; }
-    .card-l3 { border-left-color: #009ee0; }
-    .card-l5 { border-left-color: #00d2ff; }
+.card-header { display: flex; align-items: center; justify-content: space-between; }
+.line-info { display: flex; align-items: center; gap: 12px; }
 
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+.badge {
+    width: 42px; height: 42px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 1.6rem; color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.badge-l2 { background-color: #e30613; }
+.badge-l3 { background-color: #009ee0; }
+.badge-l5 { background-color: #009ee0; color: #ffffff; }
 
-    .line-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+.destination-details { display: flex; flex-direction: column; }
+.destination-name {
+    font-size: 1.1rem; font-weight: 800; color: #ffffff;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.stop-point { font-size: 0.8rem; color: #94a3b8; }
 
-    .badge {
-      width: 42px;
-      height: 42px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      font-size: 1.6rem;
-      color: #ffffff;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    }
+.status-badge {
+    font-size: 0.75rem; padding: 3px 8px; border-radius: 4px;
+    background-color: #1e293b; color: #94a3b8; font-weight: 700;
+}
+.status-badge.realtime {
+    background-color: rgba(16, 185, 129, 0.2); color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.status-badge.theoretical {
+    background-color: rgba(255, 255, 255, 0.1); color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
 
-    .badge-l2 { background-color: #e30613; }
-    .badge-l3 { background-color: #009ee0; }
-    .badge-l5 { background-color: #009ee0; color: #ffffff; }
+.siel-display {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    background-color: #090d16; border-radius: 8px; padding: 8px 16px;
+    border: 1px solid #1e293b; margin-top: 6px; flex: 1; min-height: 85px;
+}
 
-    .destination-details {
-      display: flex;
-      flex-direction: column;
-    }
+.passage-secondary { display: flex; flex-direction: column; align-items: flex-start; min-width: 70px; }
+.passage-label {
+    font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+    font-weight: 700; margin-bottom: 2px;
+}
+.secondary-time { font-size: 1.8rem; font-weight: 700; color: #ffffff; }
+.secondary-unit { font-size: 0.9rem; color: #94a3b8; }
 
-    .destination-name {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: #ffffff;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+.divider { width: 2px; height: 70%; background-color: #1e293b; margin: 0 12px; align-self: center; }
 
-    .stop-point {
-      font-size: 0.8rem;
-      color: #94a3b8;
-    }
+.passage-primary {
+    display: flex; flex-direction: column; align-items: flex-end;
+    justify-content: center; flex: 1;
+}
+.primary-time-wrapper { display: flex; align-items: baseline; gap: 4px; }
+.primary-time { font-size: 6.7rem; font-weight: 900; line-height: 0.85; }
+.primary-time.realtime { color: #ffde00; text-shadow: 0 0 18px rgba(255, 222, 0, 0.35); }
+.primary-time.theoretical { color: #ffffff; text-shadow: 0 0 18px rgba(255, 255, 255, 0.2); }
+.primary-unit { font-size: 1.8rem; font-weight: 800; }
+.primary-unit.realtime { color: #ffde00; }
+.primary-unit.theoretical { color: #ffffff; }
+.clock-times { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
 
-    .status-badge {
-      font-size: 0.75rem;
-      padding: 3px 8px;
-      border-radius: 4px;
-      background-color: #1e293b;
-      color: #94a3b8;
-      font-weight: 700;
-    }
-
-    .status-badge.realtime {
-      background-color: rgba(16, 185, 129, 0.2);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.4);
-    }
-
-    .status-badge.theoretical {
-      background-color: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-    }
-
-    .siel-display {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      background-color: #090d16;
-      border-radius: 8px;
-      padding: 8px 16px;
-      border: 1px solid #1e293b;
-      margin-top: 6px;
-      flex: 1;
-      min-height: 85px;
-    }
-
-    .passage-secondary {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      min-width: 70px;
-    }
-
-    .passage-label {
-      font-size: 0.75rem;
-      color: #64748b;
-      text-transform: uppercase;
-      font-weight: 700;
-      margin-bottom: 2px;
-    }
-
-    .secondary-time {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-    .secondary-unit {
-      font-size: 0.9rem;
-      color: #94a3b8;
-    }
-
-    .divider {
-      width: 2px;
-      height: 70%;
-      background-color: #1e293b;
-      margin: 0 12px;
-      align-self: center;
-    }
-
-    .passage-primary {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      justify-content: center;
-      flex: 1;
-    }
-
-    .primary-time-wrapper {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-    }
-
-    .primary-time {
-      font-size: 6.7rem;
-      font-weight: 900;
-      line-height: 0.85;
-    }
-
-    .primary-time.realtime {
-      color: #ffde00;
-      text-shadow: 0 0 18px rgba(255, 222, 0, 0.35);
-    }
-
-    .primary-time.theoretical {
-      color: #ffffff;
-      text-shadow: 0 0 18px rgba(255, 255, 255, 0.2);
-    }
-
-    .primary-unit {
-      font-size: 1.8rem;
-      font-weight: 800;
-    }
-    .primary-unit.realtime { color: #ffde00; }
-    .primary-unit.theoretical { color: #ffffff; }
-
-    .clock-times {
-      font-size: 0.75rem;
-      color: #64748b;
-      margin-top: 2px;
-    }
-
-    @media (max-width: 768px) {
-      body { overflow-y: auto; }
-      .dashboard-grid { display: flex; flex-direction: column; gap: 12px; }
-      .card-tram-l2, .card-tram-l3, .card-bus-l5 { width: 100%; }
-      .primary-time { font-size: 4.8rem; }
-      .secondary-time { font-size: 1.5rem; }
-    }
-  </style>
+@media (max-width: 768px) {
+    body { overflow-y: auto; }
+    .dashboard-grid { display: flex; flex-direction: column; gap: 12px; }
+    .card-tram-l2, .card-tram-l3, .card-bus-l5 { width: 100%; }
+    .primary-time { font-size: 4.8rem; }
+    .secondary-time { font-size: 1.5rem; }
+}
+</style>
 </head>
 <body>
 
-  <main class="dashboard-grid">
+<main class="dashboard-grid">
 
     <!-- Ligne 2 : Wattignies -> Orvault Grand Val -->
     <section class="transit-card card-l2 card-tram-l2">
-      <div class="card-header">
-        <div class="line-info">
-          <div class="badge badge-l2">2</div>
-          <div class="destination-details">
-            <div class="destination-name">Orvault Grand Val</div>
-            <div class="stop-point">Arrêt : Wattignies</div>
-          </div>
+        <div class="card-header">
+            <div class="line-info">
+                <div class="badge badge-l2">2</div>
+                <div class="destination-details">
+                    <div class="destination-name">Orvault Grand Val</div>
+                    <div class="stop-point">Arrêt : Wattignies</div>
+                </div>
+            </div>
+            <div class="status-badge" id="status-l2">Chargement...</div>
         </div>
-        <div class="status-badge" id="status-l2">Chargement...</div>
-      </div>
-
-      <div class="siel-display">
-        <div class="passage-secondary" id="l2-sec-box">
-          <span class="passage-label">2e Passage</span>
-          <div class="secondary-time">
-            <span id="l2-p2-min">--</span>
-            <span class="secondary-unit" id="l2-p2-unit">min</span>
-          </div>
-          <div class="clock-times" id="l2-p2-time">--:--</div>
+        <div class="siel-display">
+            <div class="passage-secondary" id="l2-sec-box">
+                <span class="passage-label">2e Passage</span>
+                <div class="secondary-time">
+                    <span id="l2-p2-min">--</span>
+                    <span class="secondary-unit" id="l2-p2-unit">min</span>
+                </div>
+                <div class="clock-times" id="l2-p2-time">--:--</div>
+            </div>
+            <div class="divider" id="l2-divider"></div>
+            <div class="passage-primary">
+                <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
+                <div class="primary-time-wrapper" id="l2-p1-wrapper">
+                    <span class="primary-time realtime" id="l2-p1-min">--</span>
+                    <span class="primary-unit realtime" id="l2-p1-unit">min</span>
+                </div>
+                <div class="clock-times" id="l2-p1-time">--:--</div>
+            </div>
         </div>
-
-        <div class="divider" id="l2-divider"></div>
-
-        <div class="passage-primary">
-          <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
-          <div class="primary-time-wrapper" id="l2-p1-wrapper">
-            <span class="primary-time realtime" id="l2-p1-min">--</span>
-            <span class="primary-unit realtime" id="l2-p1-unit">min</span>
-          </div>
-          <div class="clock-times" id="l2-p1-time">--:--</div>
-        </div>
-      </div>
     </section>
 
     <!-- Ligne 3 : Wattignies -> Marcel Paul -->
     <section class="transit-card card-l3 card-tram-l3">
-      <div class="card-header">
-        <div class="line-info">
-          <div class="badge badge-l3">3</div>
-          <div class="destination-details">
-            <div class="destination-name">Marcel Paul</div>
-            <div class="stop-point">Arrêt : Wattignies</div>
-          </div>
+        <div class="card-header">
+            <div class="line-info">
+                <div class="badge badge-l3">3</div>
+                <div class="destination-details">
+                    <div class="destination-name">Marcel Paul</div>
+                    <div class="stop-point">Arrêt : Wattignies</div>
+                </div>
+            </div>
+            <div class="status-badge" id="status-l3">Chargement...</div>
         </div>
-        <div class="status-badge" id="status-l3">Chargement...</div>
-      </div>
-
-      <div class="siel-display">
-        <div class="passage-secondary" id="l3-sec-box">
-          <span class="passage-label">2e Passage</span>
-          <div class="secondary-time">
-            <span id="l3-p2-min">--</span>
-            <span class="secondary-unit" id="l3-p2-unit">min</span>
-          </div>
-          <div class="clock-times" id="l3-p2-time">--:--</div>
+        <div class="siel-display">
+            <div class="passage-secondary" id="l3-sec-box">
+                <span class="passage-label">2e Passage</span>
+                <div class="secondary-time">
+                    <span id="l3-p2-min">--</span>
+                    <span class="secondary-unit" id="l3-p2-unit">min</span>
+                </div>
+                <div class="clock-times" id="l3-p2-time">--:--</div>
+            </div>
+            <div class="divider" id="l3-divider"></div>
+            <div class="passage-primary">
+                <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
+                <div class="primary-time-wrapper" id="l3-p1-wrapper">
+                    <span class="primary-time realtime" id="l3-p1-min">--</span>
+                    <span class="primary-unit realtime" id="l3-p1-unit">min</span>
+                </div>
+                <div class="clock-times" id="l3-p1-time">--:--</div>
+            </div>
         </div>
-
-        <div class="divider" id="l3-divider"></div>
-
-        <div class="passage-primary">
-          <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
-          <div class="primary-time-wrapper" id="l3-p1-wrapper">
-            <span class="primary-time realtime" id="l3-p1-min">--</span>
-            <span class="primary-unit realtime" id="l3-p1-unit">min</span>
-          </div>
-          <div class="clock-times" id="l3-p1-time">--:--</div>
-        </div>
-      </div>
     </section>
 
     <!-- Busway 5 : Vincent Gâche -> Gare Sud -->
     <section class="transit-card card-l5 card-bus-l5">
-      <div class="card-header">
-        <div class="line-info">
-          <div class="badge badge-l5">5</div>
-          <div class="destination-details">
-            <div class="destination-name">Gare Sud</div>
-            <div class="stop-point">Arrêt : Vincent Gâche</div>
-          </div>
+        <div class="card-header">
+            <div class="line-info">
+                <div class="badge badge-l5">5</div>
+                <div class="destination-details">
+                    <div class="destination-name">Gare Sud</div>
+                    <div class="stop-point">Arrêt : Vincent Gâche</div>
+                </div>
+            </div>
+            <div class="status-badge" id="status-l5">Chargement...</div>
         </div>
-        <div class="status-badge" id="status-l5">Chargement...</div>
-      </div>
-
-      <div class="siel-display">
-        <div class="passage-secondary" id="l5-sec-box">
-          <span class="passage-label">2e Passage</span>
-          <div class="secondary-time">
-            <span id="l5-p2-min">--</span>
-            <span class="secondary-unit" id="l5-p2-unit">min</span>
-          </div>
-          <div class="clock-times" id="l5-p2-time">--:--</div>
+        <div class="siel-display">
+            <div class="passage-secondary" id="l5-sec-box">
+                <span class="passage-label">2e Passage</span>
+                <div class="secondary-time">
+                    <span id="l5-p2-min">--</span>
+                    <span class="secondary-unit" id="l5-p2-unit">min</span>
+                </div>
+                <div class="clock-times" id="l5-p2-time">--:--</div>
+            </div>
+            <div class="divider" id="l5-divider"></div>
+            <div class="passage-primary">
+                <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
+                <div class="primary-time-wrapper" id="l5-p1-wrapper">
+                    <span class="primary-time realtime" id="l5-p1-min">--</span>
+                    <span class="primary-unit realtime" id="l5-p1-unit">min</span>
+                </div>
+                <div class="clock-times" id="l5-p1-time">--:--</div>
+            </div>
         </div>
-
-        <div class="divider" id="l5-divider"></div>
-
-        <div class="passage-primary">
-          <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
-          <div class="primary-time-wrapper" id="l5-p1-wrapper">
-            <span class="primary-time realtime" id="l5-p1-min">--</span>
-            <span class="primary-unit realtime" id="l5-p1-unit">min</span>
-          </div>
-          <div class="clock-times" id="l5-p1-time">--:--</div>
-        </div>
-      </div>
     </section>
 
-  </main>
+</main>
 
-  <script>
-    const CONFIG = {
-      l2: { stopCode: 'WATT', lineNum: '2', theoreticalSchedules: ["06:12", "06:20", "06:28", "06:36", "06:44", "06:52", "07:00", "07:08", "07:16", "07:24", "07:32", "07:40", "07:48", "07:56", "08:04", "08:12", "08:20", "08:28", "08:36", "08:44", "08:52", "09:02", "09:12", "09:22", "09:32", "09:42", "09:52", "10:02", "10:12", "10:22", "10:32", "10:42", "10:52", "11:02", "11:12", "11:22", "11:32", "11:42", "11:52", "12:02", "12:12", "12:22", "12:32", "12:42", "12:52", "13:02", "13:12", "13:22", "13:32", "13:42", "13:52", "14:02", "14:12", "14:22", "14:32", "14:42", "14:52", "15:02", "15:12", "15:22", "15:32", "15:42", "15:52", "16:02", "16:10", "16:18", "16:26", "16:34", "16:42", "16:50", "16:58", "17:06", "17:14", "17:22", "17:30", "17:38", "17:46", "17:54", "18:02", "18:10", "18:18", "18:26", "18:34", "18:42", "18:52", "19:02", "19:12", "19:22", "19:34", "19:46", "19:58", "20:13", "20:30", "20:50", "21:15", "21:45", "22:15", "22:45", "23:15"] },
-      l3: { stopCode: 'WATT', lineNum: '3', theoreticalSchedules: ["06:10", "06:18", "06:26", "06:34", "06:42", "06:50", "06:58", "07:06", "07:14", "07:22", "07:30", "07:38", "07:46", "07:54", "08:02", "08:10", "08:18", "08:26", "08:34", "08:42", "08:50", "09:00", "09:10", "09:20", "09:30", "09:40", "09:50", "10:00", "10:10", "10:20", "10:30", "10:40", "10:50", "11:00", "11:10", "11:20", "11:30", "11:40", "11:50", "12:00", "12:10", "12:20", "12:30", "12:40", "12:50", "13:00", "13:10", "13:20", "13:30", "13:40", "13:50", "14:00", "14:10", "14:20", "14:30", "14:40", "14:50", "15:00", "15:10", "15:20", "15:30", "15:40", "15:50", "16:00", "16:08", "16:16", "16:24", "16:32", "16:40", "16:48", "16:56", "17:04", "17:12", "17:20", "17:28", "17:36", "17:44", "17:52", "18:00", "18:08", "18:16", "18:24", "18:32", "18:40", "18:50", "19:00", "19:10", "19:20", "19:30", "19:42", "19:55", "20:10", "20:30", "20:50", "21:20", "21:50", "22:20", "22:50", "23:20"] },
-      l5: { stopCode: 'VIGA', lineNum: '5', theoreticalSchedules: ["06:05", "06:12", "06:19", "06:26", "06:33", "06:40", "06:47", "06:54", "07:01", "07:08", "07:15", "07:22", "07:29", "07:36", "07:43", "07:50", "07:57", "08:04", "08:11", "08:18", "08:25", "08:32", "08:39", "08:46", "08:55", "09:05", "09:15", "09:25", "09:35", "09:45", "09:55", "10:05", "10:15", "10:25", "10:35", "10:45", "10:55", "11:05", "11:15", "11:25", "11:35", "11:45", "11:55", "12:05", "12:15", "12:25", "12:35", "12:45", "12:55", "13:05", "13:15", "13:25", "13:35", "13:45", "13:55", "14:05", "14:15", "14:25", "14:35", "14:45", "14:55", "15:05", "15:15", "15:25", "15:35", "15:45", "15:55", "16:03", "16:11", "16:19", "16:27", "16:35", "16:43", "16:51", "16:59", "17:07", "17:15", "17:23", "17:31", "17:39", "17:47", "17:55", "18:03", "18:11", "18:19", "18:27", "18:35", "18:45", "18:55", "19:05", "19:15", "19:25", "19:35", "19:50", "20:05", "20:25", "20:45", "21:10", "21:40", "22:10", "22:40", "23:10"] }
-    };
+<script>
+// horaires.json est produit par fetch_tan.py (GitHub Actions) :
+//   data.l2 / l3 / l5 = [{ t: heure de passage (epoch, s), rt: true si temps réel, retard: s }, ...]
+// Le théorique et le temps réel sont déjà fusionnés dans ce fichier.
+const CARDS = ['l2', 'l3', 'l5'];
+const STALE_MS = 15 * 60 * 1000;   // au-delà, on n'affiche plus "Temps réel"
 
-    function getNextTheoreticalArrivals(scheduleArray) {
-      const now = new Date();
-      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+let payload = null;
 
-      let futurePassages = scheduleArray.map(timeStr => {
-        const [h, m] = timeStr.split(':').map(Number);
-        return { timeStr, totalMins: h * 60 + m };
-      }).filter(item => item.totalMins >= currentMinutes);
-
-      if (futurePassages.length === 0) {
-        futurePassages = scheduleArray.map(timeStr => {
-          const [h, m] = timeStr.split(':').map(Number);
-          return { timeStr, totalMins: h * 60 + m + 1440 };
-        });
-      }
-
-      return {
-        p1: { minutes: futurePassages[0] ? futurePassages[0].totalMins - currentMinutes : 0, time: futurePassages[0] ? futurePassages[0].timeStr : "--:--" },
-        p2: { minutes: futurePassages[1] ? futurePassages[1].totalMins - currentMinutes : 0, time: futurePassages[1] ? futurePassages[1].timeStr : "--:--" }
-      };
+async function loadData() {
+    try {
+        const r = await fetch('./horaires.json?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        payload = await r.json();
+    } catch (err) {
+        console.error('horaires.json illisible :', err);
     }
+    render();
+}
 
-    async function fetchStopData(key, config) {
-      // On lit le fichier JSON généré automatiquement sur GitHub sans proxy
-      const jsonUrl = './horaires.json?t=' + new Date().getTime();
+function fmtClock(epoch) {
+    return new Date(epoch * 1000).toLocaleTimeString('fr-FR',
+        { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
+}
 
-      try {
-        const response = await fetch(jsonUrl);
-        if (!response.ok) throw new Error("Fichier JSON non trouvé");
+function render() {
+    const now = Date.now();
+    const fresh = !!(payload && payload.rt_ok && payload.updated_epoch &&
+                     (now - payload.updated_epoch * 1000) < STALE_MS);
 
-        const json = await response.json();
-        const rawData = (json.data && json.data[key]) ? json.data[key] : [];
-        const now = new Date();
+    CARDS.forEach(key => {
+        const raw = (payload && payload.data && payload.data[key]) || [];
+        const list = raw
+            .filter(d => d.t * 1000 > now - 30000)            // on retire les passages déjà partis
+            .map(d => ({
+                minutesLeft: Math.max(0, Math.round((d.t * 1000 - now) / 60000)),
+                timeFormatted: fmtClock(d.t),
+                realtime: !!d.rt && fresh,
+                delayMin: d.retard ? Math.round(d.retard / 60) : 0
+            }));
+        updateCardUI(key, list[0], list[1]);
+    });
+}
 
-        let arrivals = rawData.map(item => {
-          let tempsStr = item.temps ? String(item.temps).trim().toLowerCase() : "";
-          let mins = 0;
+function setText(id, txt) { document.getElementById(id).textContent = txt; }
 
-          if (tempsStr.includes("min")) {
-            mins = parseInt(tempsStr) || 0;
-          } else if (tempsStr === "prochain" || tempsStr === "approche") {
-            mins = 0;
-          } else if (tempsStr.includes(":")) {
-            const [h, m] = tempsStr.split(":").map(Number);
-            const arrDate = new Date();
-            arrDate.setHours(h, m, 0, 0);
-            if (arrDate < now) arrDate.setDate(arrDate.getDate() + 1);
-            mins = Math.max(0, Math.round((arrDate - now) / 60000));
-          } else {
-            return null;
-          }
+function updateCardUI(key, p1, p2) {
+    const statusBadge = document.getElementById(`status-${key}`);
+    const p1MinEl = document.getElementById(`${key}-p1-min`);
+    const p1UnitEl = document.getElementById(`${key}-p1-unit`);
 
-          const arrivalTimeObj = new Date(now.getTime() + mins * 60000);
-          return {
-            minutesLeft: mins,
-            timeFormatted: arrivalTimeObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-          };
-        }).filter(Boolean).sort((a, b) => a.minutesLeft - b.minutesLeft);
-
-        if (arrivals.length === 0) throw new Error("Pas de départs en direct");
-
-        updateCardUI(key, arrivals[0], arrivals[1], false);
-
-      } catch (err) {
-        const theoretical = getNextTheoreticalArrivals(config.theoreticalSchedules);
-        updateCardUI(key, 
-          { minutesLeft: theoretical.p1.minutes, timeFormatted: theoretical.p1.time }, 
-          { minutesLeft: theoretical.p2.minutes, timeFormatted: theoretical.p2.time }, 
-          true
-        );
-      }
-    }
-
-    function updateCardUI(key, p1, p2, isTheoretical) {
-      const statusBadge = document.getElementById(`status-${key}`);
-      const p1MinEl = document.getElementById(`${key}-p1-min`);
-      const p1UnitEl = document.getElementById(`${key}-p1-unit`);
-
-      if (isTheoretical) {
-        statusBadge.textContent = "Théorique";
-        statusBadge.className = "status-badge theoretical";
+    if (!p1) {
+        statusBadge.textContent = "Indisponible";
+        statusBadge.className = "status-badge";
         p1MinEl.className = "primary-time theoretical";
         p1UnitEl.className = "primary-unit theoretical";
-      } else {
-        statusBadge.textContent = "Temps réel";
-        statusBadge.className = "status-badge realtime";
-        p1MinEl.className = "primary-time realtime";
-        p1UnitEl.className = "primary-unit realtime";
-      }
-
-      if (p1) {
-        p1MinEl.textContent = p1.minutesLeft;
-        document.getElementById(`${key}-p1-time`).textContent = p1.timeFormatted;
-      }
-
-      if (p2) {
-        document.getElementById(`${key}-p2-min`).textContent = p2.minutesLeft;
-        document.getElementById(`${key}-p2-time`).textContent = p2.timeFormatted;
-        document.getElementById(`${key}-p2-unit`).style.display = "inline";
-      } else {
-        document.getElementById(`${key}-p2-min`).textContent = "--";
-        document.getElementById(`${key}-p2-time`).textContent = "--:--";
-      }
+        setText(`${key}-p1-min`, "--");
+        setText(`${key}-p1-time`, "--:--");
+        setText(`${key}-p2-min`, "--");
+        setText(`${key}-p2-time`, "--:--");
+        return;
     }
 
-    function refreshAll() {
-      fetchStopData('l2', CONFIG.l2);
-      fetchStopData('l3', CONFIG.l3);
-      fetchStopData('l5', CONFIG.l5);
-    }
+    const mode = p1.realtime ? "realtime" : "theoretical";
+    statusBadge.textContent = p1.realtime ? "Temps réel" : "Théorique";
+    statusBadge.className = "status-badge " + mode;
+    p1MinEl.className = "primary-time " + mode;
+    p1UnitEl.className = "primary-unit " + mode;
 
-    refreshAll();
-    setInterval(refreshAll, 30000);
-  </script>
+    setText(`${key}-p1-min`, p1.minutesLeft);
+    setText(`${key}-p1-time`, p1.timeFormatted +
+        (p1.realtime && p1.delayMin >= 2 ? ` (+${p1.delayMin} min)` : ""));
+
+    if (p2) {
+        setText(`${key}-p2-min`, p2.minutesLeft);
+        setText(`${key}-p2-time`, p2.timeFormatted);
+    } else {
+        setText(`${key}-p2-min`, "--");
+        setText(`${key}-p2-time`, "--:--");
+    }
+}
+
+loadData();
+setInterval(loadData, 30000);   // recharge le fichier
+setInterval(render, 10000);     // recalcule les minutes restantes entre deux rechargements
+</script>
+
 </body>
 </html>
