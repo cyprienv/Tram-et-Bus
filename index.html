@@ -228,25 +228,142 @@ body {
 </main>
 
 <script>
-// horaires.json est produit par fetch_tan.py (GitHub Actions) :
-//   data.l2 / l3 / l5 = [{ t: heure de passage (epoch, s), rt: true si temps réel, retard: s }, ...]
-// Le théorique et le temps réel sont déjà fusionnés dans ce fichier.
+// ---------------------------------------------------------------------------
+// Deux sources, fusionnées :
+//  1. horaires.json (produit par fetch_tan.py) : horaires THÉORIQUES (+ temps réel de secours)
+//  2. le flux GTFS-RT, lu directement par le navigateur (temps réel frais, sans passer par GitHub)
+// Si la lecture directe échoue (réseau, 429, CORS), on garde les données du JSON.
+// ---------------------------------------------------------------------------
 const CARDS = ['l2', 'l3', 'l5'];
-const STALE_MS = 15 * 60 * 1000;   // au-delà, on n'affiche plus "Temps réel"
+const DEFAULT_LIGNES = { l2: '2', l3: '3', l5: '5' };
+const RT_URL = new URLSearchParams(location.search).get('rt') ||
+    'https://proxy.transport.data.gouv.fr/resource/naolib-nantes-gtfs-rt-trip-update';
+const JSON_STALE_MS = 15 * 60 * 1000;   // JSON du workflow considéré périmé au-delà
+const RT_STALE_MS = 3 * 60 * 1000;      // flux direct considéré périmé au-delà
+const RT_REFRESH_MS = 30000;
+const NB_DEPARTS = 8;
 
-let payload = null;
+let payload = null;        // horaires.json
+let live = null;           // { fetchedAt, data:{l2:[...]} } issu du flux direct
+let rtSkip = 0;            // cycles à sauter après une erreur (évite de marteler le serveur)
 
-async function loadData() {
+// ---- décodeur protobuf minimal (GTFS-RT) ----
+function readVarint(b, i) {
+    let n = 0, bytes = [];
+    for (;;) { const x = b[i++]; bytes.push(x); if (!(x & 0x80)) break; }
+    if (bytes.length <= 7) {
+        let r = 0;
+        bytes.forEach((x, k) => { r += (x & 0x7f) * Math.pow(2, 7 * k); });
+        return [r, i];
+    }
+    let big = 0n;
+    bytes.forEach((x, k) => { big |= BigInt(x & 0x7f) << BigInt(7 * k); });
+    return [Number(BigInt.asIntN(64, big)), i];
+}
+function readMsg(b) {
+    const out = {}; let i = 0;
+    while (i < b.length) {
+        let k; [k, i] = readVarint(b, i);
+        const f = Math.floor(k / 8), w = k % 8; let v;
+        if (w === 0) { [v, i] = readVarint(b, i); }
+        else if (w === 2) { let n; [n, i] = readVarint(b, i); v = b.subarray(i, i + n); i += n; }
+        else if (w === 1) { i += 8; continue; }
+        else if (w === 5) { i += 4; continue; }
+        else throw new Error('protobuf: type ' + w);
+        (out[f] = out[f] || []).push(v);
+    }
+    return out;
+}
+const dec = new TextDecoder();
+const tail = s => (s || '').split(':').pop();
+
+function parseRT(buf) {
+    const top = readMsg(new Uint8Array(buf));
+    const feedTs = top[1] ? (readMsg(top[1][0])[3] || [null])[0] : null;
+    const updates = [], cancelled = new Set(), seen = new Set();
+    (top[2] || []).forEach(ent => {
+        const e = readMsg(ent);
+        if (!e[3]) return;
+        const tu = readMsg(e[3][0]);
+        const trip = tu[1] ? readMsg(tu[1][0]) : {};
+        if (!trip[5]) return;
+        const line = tail(dec.decode(trip[5][0]));
+        const tid = trip[1] ? dec.decode(trip[1][0]) : '';
+        seen.add(line + '|' + tail(tid));
+        if ((trip[4] || [0])[0] === 3) { cancelled.add(line + '|' + tail(tid)); return; }
+        (tu[2] || []).forEach(st => {
+            const s = readMsg(st);
+            if (!s[4] || (s[5] || [0])[0] === 1) return;
+            const evb = s[3] ? s[3][0] : (s[2] ? s[2][0] : null);
+            if (!evb) return;
+            const ev = readMsg(evb);
+            if (!ev[2]) return;
+            updates.push({ line, stop: dec.decode(s[4][0]), t: ev[2][0],
+                           delay: ev[1] ? ev[1][0] : null, tid });
+        });
+    });
+    return { feedTs, updates, cancelled, seen };
+}
+
+// ---- fusion théorique + temps réel (même logique que fetch_tan.py) ----
+function mergeCard(line, th, rt, quais, now) {
+    const qs = new Set(quais);
+    const rts = rt.updates.filter(u => u.line === line && qs.has(u.stop));
+    const used = new Set(), out = [];
+    const byTrip = new Map(th.map((d, i) => [tail(d[1]), i]));
+    rts.forEach(u => {
+        let idx = byTrip.get(tail(u.tid));
+        if (idx === undefined && u.delay !== null) {
+            const sched = u.t - u.delay; let best = null;
+            th.forEach((d, i) => {
+                const gap = Math.abs(d[0] - sched);
+                if (!used.has(i) && gap <= 90 && (best === null || gap < best[0])) best = [gap, i];
+            });
+            idx = best ? best[1] : undefined;
+        }
+        if (idx !== undefined) used.add(idx);
+        out.push({ t: u.t, rt: true, retard: u.delay });
+    });
+    th.forEach((d, i) => {
+        if (used.has(i)) return;
+        const k = line + '|' + tail(d[1]);
+        if (rt.cancelled.has(k) || rt.seen.has(k)) return;
+        out.push({ t: d[0], rt: false });
+    });
+    return out.filter(o => o.t >= now / 1000 - 60).sort((a, b) => a.t - b.t).slice(0, NB_DEPARTS);
+}
+
+// ---- chargement ----
+async function loadJson() {
     try {
         const r = await fetch('./horaires.json?t=' + Date.now(), { cache: 'no-store' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         payload = await r.json();
+    } catch (err) { console.error('horaires.json illisible :', err); }
+    render();
+}
+
+async function loadLive() {
+    if (rtSkip > 0) { rtSkip--; return; }
+    if (!payload || !payload.theorique) return;
+    try {
+        const r = await fetch(RT_URL, { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const rt = parseRT(await r.arrayBuffer());
+        const now = Date.now(), lignes = payload.lignes || DEFAULT_LIGNES, data = {};
+        CARDS.forEach(k => {
+            const th = payload.theorique[k];
+            data[k] = mergeCard(lignes[k], th.departs, rt, th.quais, now);
+        });
+        live = { fetchedAt: now, feedMs: rt.feedTs ? rt.feedTs * 1000 : now, data };
     } catch (err) {
-        console.error('horaires.json illisible :', err);
+        console.warn('Flux temps réel direct indisponible, JSON utilisé :', err.message);
+        rtSkip = 3;                      // on réessaie dans ~2 min
     }
     render();
 }
 
+// ---- affichage ----
 function fmtClock(epoch) {
     return new Date(epoch * 1000).toLocaleTimeString('fr-FR',
         { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
@@ -254,17 +371,19 @@ function fmtClock(epoch) {
 
 function render() {
     const now = Date.now();
-    const fresh = !!(payload && payload.rt_ok && payload.updated_epoch &&
-                     (now - payload.updated_epoch * 1000) < STALE_MS);
+    const liveOk = !!(live && now - live.fetchedAt < RT_STALE_MS && now - live.feedMs < 10 * 60 * 1000);
+    const jsonOk = !!(payload && payload.rt_ok && payload.updated_epoch &&
+                      now - payload.updated_epoch * 1000 < JSON_STALE_MS);
+    const source = liveOk ? live.data : (payload && payload.data) || {};
+    const rtAllowed = liveOk || jsonOk;
 
     CARDS.forEach(key => {
-        const raw = (payload && payload.data && payload.data[key]) || [];
-        const list = raw
-            .filter(d => d.t * 1000 > now - 30000)            // on retire les passages déjà partis
+        const list = (source[key] || [])
+            .filter(d => d.t * 1000 > now - 30000)
             .map(d => ({
                 minutesLeft: Math.max(0, Math.round((d.t * 1000 - now) / 60000)),
                 timeFormatted: fmtClock(d.t),
-                realtime: !!d.rt && fresh,
+                realtime: !!d.rt && rtAllowed,
                 delayMin: d.retard ? Math.round(d.retard / 60) : 0
             }));
         updateCardUI(key, list[0], list[1]);
@@ -309,9 +428,10 @@ function updateCardUI(key, p1, p2) {
     }
 }
 
-loadData();
-setInterval(loadData, 30000);   // recharge le fichier
-setInterval(render, 10000);     // recalcule les minutes restantes entre deux rechargements
+loadJson().then(loadLive);
+setInterval(loadJson, 60000);           // théorique + secours (fichier du workflow)
+setInterval(loadLive, RT_REFRESH_MS);   // temps réel direct
+setInterval(render, 10000);             // minutes restantes entre deux chargements
 </script>
 
 </body>

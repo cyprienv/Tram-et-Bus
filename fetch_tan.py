@@ -15,7 +15,9 @@ import io
 import json
 import os
 import sys
+import time
 import unicodedata
+import urllib.error
 import urllib.request
 import zipfile
 from datetime import date, datetime, timedelta
@@ -68,10 +70,26 @@ def tail(x):
     return (x or "").split(":")[-1]
 
 
-def http_get(url, timeout=60):
-    req = urllib.request.Request(url, headers={"User-Agent": "tram-et-bus/1.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+def http_get(url, timeout=60, tries=4):
+    """GET avec nouvelles tentatives (429 / erreurs réseau), en respectant Retry-After."""
+    req = urllib.request.Request(url, headers={"User-Agent": "tram-et-bus/1.0 (tableau de bord personnel)"})
+    for n in range(1, tries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read()
+        except urllib.error.HTTPError as exc:
+            if exc.code not in (429, 500, 502, 503, 504) or n == tries:
+                raise
+            try:
+                wait = min(int(exc.headers.get("Retry-After", "")), 30)
+            except ValueError:
+                wait = 4 * n
+        except (urllib.error.URLError, TimeoutError):
+            if n == tries:
+                raise
+            wait = 4 * n
+        print(f"Nouvelle tentative {n}/{tries - 1} dans {wait}s : {url}")
+        time.sleep(wait)
 
 
 # ----------------------------------------------------------------------------
@@ -376,6 +394,7 @@ def main():
         "rt_feed_epoch": feed_ts,
         "rt_ok": feed_ts is not None,
         "errors": errors,
+        "lignes": {k: c["ligne"] for k, c in CARTES.items()},
         "data": data,
         "theorique": cache,
         "theorique_built": built,
