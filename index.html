@@ -113,6 +113,21 @@ body {
 .primary-unit.theoretical { color: #ffffff; }
 .clock-times { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
 
+/* ---- bandeau « partir dans X min / trop tard » ---- */
+.leave-banner {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+    min-height: 2.2rem; margin-top: 6px; padding: 6px 12px; border-radius: 8px;
+    font-size: 1.05rem; font-weight: 800; background-color: #1e293b; color: #94a3b8;
+    border: 1px solid transparent;
+}
+.leave-banner.go   { background: rgba(16,185,129,0.18); color: #34d399; border-color: rgba(16,185,129,0.4); }
+.leave-banner.now  { background: rgba(245,158,11,0.22); color: #fbbf24; border-color: rgba(245,158,11,0.5);
+                     animation: pulse 1s ease-in-out infinite; }
+.leave-banner.late { background: rgba(239,68,68,0.18); color: #f87171; border-color: rgba(239,68,68,0.4); }
+.leave-banner small { font-size: 0.85rem; font-weight: 700; opacity: 0.9; }
+.too-late { opacity: 0.4; }
+@keyframes pulse { 50% { opacity: 0.55; } }
+
 @media (max-width: 768px) {
     body { overflow-y: auto; }
     .dashboard-grid { display: flex; flex-direction: column; gap: 12px; }
@@ -138,6 +153,7 @@ body {
             </div>
             <div class="status-badge" id="status-l2">Chargement...</div>
         </div>
+        <div class="leave-banner" id="l2-leave"></div>
         <div class="siel-display">
             <div class="passage-secondary" id="l2-sec-box">
                 <span class="passage-label">2e Passage</span>
@@ -171,6 +187,7 @@ body {
             </div>
             <div class="status-badge" id="status-l3">Chargement...</div>
         </div>
+        <div class="leave-banner" id="l3-leave"></div>
         <div class="siel-display">
             <div class="passage-secondary" id="l3-sec-box">
                 <span class="passage-label">2e Passage</span>
@@ -204,6 +221,7 @@ body {
             </div>
             <div class="status-badge" id="status-l5">Chargement...</div>
         </div>
+        <div class="leave-banner" id="l5-leave"></div>
         <div class="siel-display">
             <div class="passage-secondary" id="l5-sec-box">
                 <span class="passage-label">2e Passage</span>
@@ -242,6 +260,10 @@ const JSON_STALE_MS = 15 * 60 * 1000;   // JSON du workflow considéré périmé
 const RT_STALE_MS = 3 * 60 * 1000;      // flux direct considéré périmé au-delà
 const RT_REFRESH_MS = 30000;
 const NB_DEPARTS = 8;
+
+// Temps de marche depuis chez toi jusqu'à chaque arrêt (en minutes).
+// Modifie ici si besoin, une valeur par carte.
+const WALK_MIN = { l2: 6, l3: 6, l5: 6 };
 
 let payload = null;        // horaires.json
 let live = null;           // { fetchedAt, data:{l2:[...]} } issu du flux direct
@@ -386,13 +408,40 @@ function render() {
                 realtime: !!d.rt && rtAllowed,
                 delayMin: d.retard ? Math.round(d.retard / 60) : 0
             }));
-        updateCardUI(key, list[0], list[1]);
+        updateCardUI(key, list[0], list[1], list);
     });
 }
 
 function setText(id, txt) { document.getElementById(id).textContent = txt; }
 
-function updateCardUI(key, p1, p2) {
+// Détermine le message du bandeau selon le temps de marche
+function leaveInfo(list, walk) {
+    const idx = list.findIndex(p => p.minutesLeft >= walk);
+    if (idx === -1) return { cls: 'late', html: 'Trop tard' };
+    const p = list[idx], wait = p.minutesLeft - walk;
+    const when = wait === 0 ? 'Partir maintenant' : `Partir dans ${wait} min`;
+    if (idx === 0) return { cls: wait === 0 ? 'now' : 'go', html: `🚶 ${when}` };
+    return { cls: 'late', html: `Trop tard <small>· 🚶 ${when} pour le ${p.timeFormatted}</small>` };
+}
+
+function updateLeaveUI(key, list) {
+    const banner = document.getElementById(`${key}-leave`);
+    const p1Wrap = document.getElementById(`${key}-p1-wrapper`);
+    const walk = WALK_MIN[key] || 0;
+    if (!list || !list.length || !walk) {
+        banner.className = 'leave-banner';
+        banner.textContent = '';
+        p1Wrap.classList.remove('too-late');
+        return;
+    }
+    const info = leaveInfo(list, walk);
+    banner.className = 'leave-banner ' + info.cls;
+    banner.innerHTML = info.html;
+    p1Wrap.classList.toggle('too-late', list[0].minutesLeft < walk);
+}
+
+function updateCardUI(key, p1, p2, list) {
+    updateLeaveUI(key, list);
     const statusBadge = document.getElementById(`status-${key}`);
     const p1MinEl = document.getElementById(`${key}-p1-min`);
     const p1UnitEl = document.getElementById(`${key}-p1-unit`);
