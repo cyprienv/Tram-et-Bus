@@ -410,13 +410,34 @@ function mergeCard(line, th, rt, quais, now) {
     return out.filter(o => o.t >= now / 1000 - 60).sort((a, b) => a.t - b.t).slice(0, NB_DEPARTS);
 }
 
+// ---- mémoire locale : les dernières données valides survivent à un rechargement ----
+const CACHE_KEY = 'tram-et-bus-cache-v1';
+const CACHE_MAX_AGE_MS = 12 * 3600 * 1000;   // au-delà, on ne réutilise pas la mémoire
+
+function saveCache() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ payload, live })); } catch (e) { /* stockage indisponible */ }
+}
+function loadCache() {
+    try {
+        const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        if (c && c.payload && c.payload.data && c.payload.updated_epoch &&
+            Date.now() - c.payload.updated_epoch * 1000 < CACHE_MAX_AGE_MS) {
+            payload = c.payload;
+            live = c.live || null;
+        }
+    } catch (e) { /* mémoire illisible : on repart de zéro */ }
+}
+
 // ---- chargement ----
 async function loadJson() {
     try {
         const r = await fetch('./horaires.json?t=' + Date.now(), { cache: 'no-store' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
-        payload = await r.json();
-    } catch (err) { console.error('horaires.json illisible :', err); }
+        const j = await r.json();
+        if (!j || !j.data || !j.theorique) throw new Error('JSON incomplet');
+        payload = j;            // remplacé seulement si les nouvelles infos sont valides
+        saveCache();
+    } catch (err) { console.error('horaires.json illisible, anciennes données conservées :', err); }
     render();
 }
 
@@ -433,6 +454,7 @@ async function loadLive() {
             data[k] = mergeCard(lignes[k], th.departs, rt, th.quais, now);
         });
         live = { fetchedAt: now, feedMs: rt.feedTs ? rt.feedTs * 1000 : now, data };
+        saveCache();
     } catch (err) {
         console.warn('Flux temps réel direct indisponible, JSON utilisé :', err.message);
         rtSkip = 2;                      // après une erreur (ex. 429), on patiente ~2 min
@@ -536,6 +558,8 @@ function updateCardUI(key, p1, p2, p3) {
     }
 }
 
+loadCache();
+render();                               // affiche tout de suite la dernière version connue
 loadJson().then(loadLive);
 setInterval(loadJson, 60000);           // théorique + secours (fichier du workflow)
 setInterval(loadLive, RT_REFRESH_MS);   // temps réel direct
