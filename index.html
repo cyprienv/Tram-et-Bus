@@ -90,7 +90,9 @@ body {
     border: 1px solid #1e293b; margin-top: 6px; flex: 1; min-height: 85px;
 }
 
-.passage-secondary { display: flex; flex-direction: column; align-items: flex-start; flex: 1; min-width: 0; }
+.passage-secondary { display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; flex: 1; min-width: 0; }
+.sec-item { display: flex; flex-direction: column; align-items: flex-start; align-self: stretch; }
+.sec-item .clock-times { display: inline; margin: 0 0 0 6px; font-size: 0.8rem; }
 .passage-label {
     font-size: 0.75rem; color: #64748b; text-transform: uppercase;
     font-weight: 700; margin-bottom: 2px;
@@ -144,10 +146,13 @@ body {
     .passage-label { font-size: 0.65rem; }
     .primary-time { font-size: clamp(2.8rem, 8vh, 4.2rem); }
     .primary-unit { font-size: 1.1rem; }
-    .secondary-time { font-size: 1.3rem; }
+    .secondary-time { font-size: 1.1rem; }
     .secondary-unit { font-size: 0.8rem; }
     .clock-times { font-size: 0.65rem; }
-    .leave-box { font-size: 0.75rem; min-height: 1.7rem; padding: 3px 6px; margin-top: 4px; }
+    .sec-item .clock-times { font-size: 0.65rem; margin-left: 4px; }
+    .passage-secondary { gap: 4px; }
+    .passage-label { margin-bottom: 0; }
+    .leave-box { font-size: 0.72rem; min-height: 1.45rem; padding: 2px 6px; margin-top: 2px; }
 }
 </style>
 </head>
@@ -169,13 +174,24 @@ body {
         </div>
         <div class="siel-display">
             <div class="passage-secondary" id="l2-sec-box">
-                <span class="passage-label">2e Passage</span>
-                <div class="secondary-time">
-                    <span id="l2-p2-min">--</span>
-                    <span class="secondary-unit" id="l2-p2-unit">min</span>
+                <div class="sec-item">
+                    <span class="passage-label">2e Passage</span>
+                    <div class="secondary-time">
+                        <span id="l2-p2-min">--</span>
+                        <span class="secondary-unit" id="l2-p2-unit">min</span>
+                        <span class="clock-times" id="l2-p2-time">--:--</span>
+                    </div>
+                    <div class="leave-box" id="l2-leave2"></div>
                 </div>
-                <div class="clock-times" id="l2-p2-time">--:--</div>
-                <div class="leave-box" id="l2-leave2"></div>
+                <div class="sec-item">
+                    <span class="passage-label">3e Passage</span>
+                    <div class="secondary-time">
+                        <span id="l2-p3-min">--</span>
+                        <span class="secondary-unit" id="l2-p3-unit">min</span>
+                        <span class="clock-times" id="l2-p3-time">--:--</span>
+                    </div>
+                    <div class="leave-box" id="l2-leave3"></div>
+                </div>
             </div>
             <div class="divider" id="l2-divider"></div>
             <div class="passage-primary">
@@ -204,13 +220,24 @@ body {
         </div>
         <div class="siel-display">
             <div class="passage-secondary" id="l3-sec-box">
-                <span class="passage-label">2e Passage</span>
-                <div class="secondary-time">
-                    <span id="l3-p2-min">--</span>
-                    <span class="secondary-unit" id="l3-p2-unit">min</span>
+                <div class="sec-item">
+                    <span class="passage-label">2e Passage</span>
+                    <div class="secondary-time">
+                        <span id="l3-p2-min">--</span>
+                        <span class="secondary-unit" id="l3-p2-unit">min</span>
+                        <span class="clock-times" id="l3-p2-time">--:--</span>
+                    </div>
+                    <div class="leave-box" id="l3-leave2"></div>
                 </div>
-                <div class="clock-times" id="l3-p2-time">--:--</div>
-                <div class="leave-box" id="l3-leave2"></div>
+                <div class="sec-item">
+                    <span class="passage-label">3e Passage</span>
+                    <div class="secondary-time">
+                        <span id="l3-p3-min">--</span>
+                        <span class="secondary-unit" id="l3-p3-unit">min</span>
+                        <span class="clock-times" id="l3-p3-time">--:--</span>
+                    </div>
+                    <div class="leave-box" id="l3-leave3"></div>
+                </div>
             </div>
             <div class="divider" id="l3-divider"></div>
             <div class="passage-primary">
@@ -239,13 +266,24 @@ body {
         </div>
         <div class="siel-display">
             <div class="passage-secondary" id="l5-sec-box">
-                <span class="passage-label">2e Passage</span>
-                <div class="secondary-time">
-                    <span id="l5-p2-min">--</span>
-                    <span class="secondary-unit" id="l5-p2-unit">min</span>
+                <div class="sec-item">
+                    <span class="passage-label">2e Passage</span>
+                    <div class="secondary-time">
+                        <span id="l5-p2-min">--</span>
+                        <span class="secondary-unit" id="l5-p2-unit">min</span>
+                        <span class="clock-times" id="l5-p2-time">--:--</span>
+                    </div>
+                    <div class="leave-box" id="l5-leave2"></div>
                 </div>
-                <div class="clock-times" id="l5-p2-time">--:--</div>
-                <div class="leave-box" id="l5-leave2"></div>
+                <div class="sec-item">
+                    <span class="passage-label">3e Passage</span>
+                    <div class="secondary-time">
+                        <span id="l5-p3-min">--</span>
+                        <span class="secondary-unit" id="l5-p3-unit">min</span>
+                        <span class="clock-times" id="l5-p3-time">--:--</span>
+                    </div>
+                    <div class="leave-box" id="l5-leave3"></div>
+                </div>
             </div>
             <div class="divider" id="l5-divider"></div>
             <div class="passage-primary">
@@ -425,7 +463,7 @@ function render() {
                 realtime: !!d.rt && rtAllowed,
                 delayMin: d.retard ? Math.round(d.retard / 60) : 0
             }));
-        updateCardUI(key, list[0], list[1]);
+        updateCardUI(key, list[0], list[1], list[2]);
     });
 }
 
@@ -448,10 +486,11 @@ function setLeave(boxId, dimEl, p, walk) {
     dimEl.classList.toggle('too-late', st.cls === 'late');
 }
 
-function updateCardUI(key, p1, p2) {
+function updateCardUI(key, p1, p2, p3) {
     const walk = WALK_MIN[key] || 0;
     setLeave(`${key}-leave1`, document.getElementById(`${key}-p1-wrapper`), p1, walk);
     setLeave(`${key}-leave2`, document.getElementById(`${key}-p2-min`).parentElement, p2, walk);
+    setLeave(`${key}-leave3`, document.getElementById(`${key}-p3-min`).parentElement, p3, walk);
     const statusBadge = document.getElementById(`status-${key}`);
     const p1MinEl = document.getElementById(`${key}-p1-min`);
     const p1UnitEl = document.getElementById(`${key}-p1-unit`);
@@ -465,6 +504,8 @@ function updateCardUI(key, p1, p2) {
         setText(`${key}-p1-time`, "--:--");
         setText(`${key}-p2-min`, "--");
         setText(`${key}-p2-time`, "--:--");
+        setText(`${key}-p3-min`, "--");
+        setText(`${key}-p3-time`, "--:--");
         return;
     }
 
@@ -484,6 +525,14 @@ function updateCardUI(key, p1, p2) {
     } else {
         setText(`${key}-p2-min`, "--");
         setText(`${key}-p2-time`, "--:--");
+    }
+
+    if (p3) {
+        setText(`${key}-p3-min`, p3.minutesLeft);
+        setText(`${key}-p3-time`, p3.timeFormatted);
+    } else {
+        setText(`${key}-p3-min`, "--");
+        setText(`${key}-p3-time`, "--:--");
     }
 }
 
