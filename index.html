@@ -90,7 +90,7 @@ body {
     border: 1px solid #1e293b; margin-top: 6px; flex: 1; min-height: 85px;
 }
 
-.passage-secondary { display: flex; flex-direction: column; align-items: flex-start; min-width: 70px; }
+.passage-secondary { display: flex; flex-direction: column; align-items: flex-start; flex: 1; min-width: 0; }
 .passage-label {
     font-size: 0.75rem; color: #64748b; text-transform: uppercase;
     font-weight: 700; margin-bottom: 2px;
@@ -113,27 +113,41 @@ body {
 .primary-unit.theoretical { color: #ffffff; }
 .clock-times { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
 
-/* ---- bandeau « partir dans X min / trop tard » ---- */
-.leave-banner {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
-    min-height: 2.2rem; margin-top: 6px; padding: 6px 12px; border-radius: 8px;
-    font-size: 1.05rem; font-weight: 800; background-color: #1e293b; color: #94a3b8;
+/* ---- encadrés « partir dans X min / trop tard », un par passage ---- */
+.leave-box {
+    align-self: stretch; margin-top: 6px; padding: 5px 8px; min-height: 2rem;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    border-radius: 8px; font-size: 1rem; font-weight: 800; line-height: 1.15;
     border: 1px solid transparent;
 }
-.leave-banner.go   { background: rgba(16,185,129,0.18); color: #34d399; border-color: rgba(16,185,129,0.4); }
-.leave-banner.now  { background: rgba(245,158,11,0.22); color: #fbbf24; border-color: rgba(245,158,11,0.5);
-                     animation: pulse 1s ease-in-out infinite; }
-.leave-banner.late { background: rgba(239,68,68,0.18); color: #f87171; border-color: rgba(239,68,68,0.4); }
-.leave-banner small { font-size: 0.85rem; font-weight: 700; opacity: 0.9; }
+.leave-box:empty { visibility: hidden; }
+.leave-box.go   { background: rgba(16,185,129,0.18); color: #34d399; border-color: rgba(16,185,129,0.45); }
+.leave-box.now  { background: rgba(245,158,11,0.22); color: #fbbf24; border-color: rgba(245,158,11,0.55);
+                  animation: pulse 1s ease-in-out infinite; }
+.leave-box.late { background: rgba(239,68,68,0.18); color: #f87171; border-color: rgba(239,68,68,0.45); }
 .too-late { opacity: 0.4; }
 @keyframes pulse { 50% { opacity: 0.55; } }
 
+/* ---- téléphone : tout tient sur un seul écran, sans défiler ---- */
 @media (max-width: 768px) {
-    body { overflow-y: auto; }
-    .dashboard-grid { display: flex; flex-direction: column; gap: 12px; }
-    .card-tram-l2, .card-tram-l3, .card-bus-l5 { width: 100%; }
-    .primary-time { font-size: 4.8rem; }
-    .secondary-time { font-size: 1.5rem; }
+    body { padding: 8px; min-height: 0; height: 100vh; height: 100dvh; overflow-y: auto; }
+    .dashboard-grid { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+    .card-tram-l2, .card-tram-l3, .card-bus-l5 { width: 100%; flex: 1 1 0; }
+    .transit-card { padding: 8px 10px; min-height: auto; border-left-width: 6px; }
+    .badge { width: 34px; height: 34px; font-size: 1.3rem; }
+    .line-info { gap: 8px; }
+    .destination-name { font-size: 0.9rem; letter-spacing: 0.3px; }
+    .stop-point { font-size: 0.7rem; }
+    .status-badge { font-size: 0.65rem; padding: 2px 6px; white-space: nowrap; }
+    .siel-display { padding: 6px 10px; min-height: 0; margin-top: 4px; }
+    .divider { margin: 0 8px; }
+    .passage-label { font-size: 0.65rem; }
+    .primary-time { font-size: clamp(2.8rem, 8vh, 4.2rem); }
+    .primary-unit { font-size: 1.1rem; }
+    .secondary-time { font-size: 1.3rem; }
+    .secondary-unit { font-size: 0.8rem; }
+    .clock-times { font-size: 0.65rem; }
+    .leave-box { font-size: 0.75rem; min-height: 1.7rem; padding: 3px 6px; margin-top: 4px; }
 }
 </style>
 </head>
@@ -153,7 +167,6 @@ body {
             </div>
             <div class="status-badge" id="status-l2">Chargement...</div>
         </div>
-        <div class="leave-banner" id="l2-leave"></div>
         <div class="siel-display">
             <div class="passage-secondary" id="l2-sec-box">
                 <span class="passage-label">2e Passage</span>
@@ -162,6 +175,7 @@ body {
                     <span class="secondary-unit" id="l2-p2-unit">min</span>
                 </div>
                 <div class="clock-times" id="l2-p2-time">--:--</div>
+                <div class="leave-box" id="l2-leave2"></div>
             </div>
             <div class="divider" id="l2-divider"></div>
             <div class="passage-primary">
@@ -171,6 +185,7 @@ body {
                     <span class="primary-unit realtime" id="l2-p1-unit">min</span>
                 </div>
                 <div class="clock-times" id="l2-p1-time">--:--</div>
+                <div class="leave-box" id="l2-leave1"></div>
             </div>
         </div>
     </section>
@@ -187,7 +202,6 @@ body {
             </div>
             <div class="status-badge" id="status-l3">Chargement...</div>
         </div>
-        <div class="leave-banner" id="l3-leave"></div>
         <div class="siel-display">
             <div class="passage-secondary" id="l3-sec-box">
                 <span class="passage-label">2e Passage</span>
@@ -196,6 +210,7 @@ body {
                     <span class="secondary-unit" id="l3-p2-unit">min</span>
                 </div>
                 <div class="clock-times" id="l3-p2-time">--:--</div>
+                <div class="leave-box" id="l3-leave2"></div>
             </div>
             <div class="divider" id="l3-divider"></div>
             <div class="passage-primary">
@@ -205,6 +220,7 @@ body {
                     <span class="primary-unit realtime" id="l3-p1-unit">min</span>
                 </div>
                 <div class="clock-times" id="l3-p1-time">--:--</div>
+                <div class="leave-box" id="l3-leave1"></div>
             </div>
         </div>
     </section>
@@ -221,7 +237,6 @@ body {
             </div>
             <div class="status-badge" id="status-l5">Chargement...</div>
         </div>
-        <div class="leave-banner" id="l5-leave"></div>
         <div class="siel-display">
             <div class="passage-secondary" id="l5-sec-box">
                 <span class="passage-label">2e Passage</span>
@@ -230,6 +245,7 @@ body {
                     <span class="secondary-unit" id="l5-p2-unit">min</span>
                 </div>
                 <div class="clock-times" id="l5-p2-time">--:--</div>
+                <div class="leave-box" id="l5-leave2"></div>
             </div>
             <div class="divider" id="l5-divider"></div>
             <div class="passage-primary">
@@ -239,6 +255,7 @@ body {
                     <span class="primary-unit realtime" id="l5-p1-unit">min</span>
                 </div>
                 <div class="clock-times" id="l5-p1-time">--:--</div>
+                <div class="leave-box" id="l5-leave1"></div>
             </div>
         </div>
     </section>
@@ -408,40 +425,33 @@ function render() {
                 realtime: !!d.rt && rtAllowed,
                 delayMin: d.retard ? Math.round(d.retard / 60) : 0
             }));
-        updateCardUI(key, list[0], list[1], list);
+        updateCardUI(key, list[0], list[1]);
     });
 }
 
 function setText(id, txt) { document.getElementById(id).textContent = txt; }
 
-// Détermine le message du bandeau selon le temps de marche
-function leaveInfo(list, walk) {
-    const idx = list.findIndex(p => p.minutesLeft >= walk);
-    if (idx === -1) return { cls: 'late', html: 'Trop tard' };
-    const p = list[idx], wait = p.minutesLeft - walk;
-    const when = wait === 0 ? 'Partir maintenant' : `Partir dans ${wait} min`;
-    if (idx === 0) return { cls: wait === 0 ? 'now' : 'go', html: `🚶 ${when}` };
-    return { cls: 'late', html: `Trop tard <small>· 🚶 ${when} pour le ${p.timeFormatted}</small>` };
+// État d'un passage selon le temps de marche : trop tard / maintenant / dans X min
+function leaveState(p, walk) {
+    if (!p || !walk) return { cls: '', text: '' };
+    const wait = p.minutesLeft - walk;
+    if (wait < 0) return { cls: 'late', text: 'Trop tard' };
+    if (wait === 0) return { cls: 'now', text: 'Partir maintenant' };
+    return { cls: 'go', text: `Partir dans ${wait} min` };
 }
 
-function updateLeaveUI(key, list) {
-    const banner = document.getElementById(`${key}-leave`);
-    const p1Wrap = document.getElementById(`${key}-p1-wrapper`);
+function setLeave(boxId, dimEl, p, walk) {
+    const st = leaveState(p, walk);
+    const box = document.getElementById(boxId);
+    box.className = 'leave-box ' + st.cls;
+    box.textContent = st.text;
+    dimEl.classList.toggle('too-late', st.cls === 'late');
+}
+
+function updateCardUI(key, p1, p2) {
     const walk = WALK_MIN[key] || 0;
-    if (!list || !list.length || !walk) {
-        banner.className = 'leave-banner';
-        banner.textContent = '';
-        p1Wrap.classList.remove('too-late');
-        return;
-    }
-    const info = leaveInfo(list, walk);
-    banner.className = 'leave-banner ' + info.cls;
-    banner.innerHTML = info.html;
-    p1Wrap.classList.toggle('too-late', list[0].minutesLeft < walk);
-}
-
-function updateCardUI(key, p1, p2, list) {
-    updateLeaveUI(key, list);
+    setLeave(`${key}-leave1`, document.getElementById(`${key}-p1-wrapper`), p1, walk);
+    setLeave(`${key}-leave2`, document.getElementById(`${key}-p2-min`).parentElement, p2, walk);
     const statusBadge = document.getElementById(`status-${key}`);
     const p1MinEl = document.getElementById(`${key}-p1-min`);
     const p1UnitEl = document.getElementById(`${key}-p1-unit`);
