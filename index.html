@@ -97,8 +97,8 @@ body {
     font-size: 0.75rem; color: #64748b; text-transform: uppercase;
     font-weight: 700; margin-bottom: 2px;
 }
-.secondary-time { font-size: 1.8rem; font-weight: 700; color: #ffffff; }
-.secondary-unit { font-size: 0.9rem; color: #94a3b8; }
+.secondary-time { font-size: 2.8rem; font-weight: 800; line-height: 1.05; color: inherit; white-space: nowrap; }
+.secondary-unit { font-size: 1rem; color: inherit; opacity: 0.75; }
 
 .divider { width: 2px; height: 70%; background-color: #1e293b; margin: 0 12px; align-self: center; }
 
@@ -108,26 +108,21 @@ body {
 }
 .primary-time-wrapper { display: flex; align-items: baseline; gap: 4px; }
 .primary-time { font-size: 6.7rem; font-weight: 900; line-height: 0.85; }
-.primary-time.realtime { color: #ffde00; text-shadow: 0 0 18px rgba(255, 222, 0, 0.35); }
-.primary-time.theoretical { color: #ffffff; text-shadow: 0 0 18px rgba(255, 255, 255, 0.2); }
 .primary-unit { font-size: 1.8rem; font-weight: 800; }
-.primary-unit.realtime { color: #ffde00; }
-.primary-unit.theoretical { color: #ffffff; }
 .clock-times { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
 
-/* ---- encadrés « partir dans X min / trop tard », un par passage ---- */
-.leave-box {
-    align-self: stretch; margin-top: 6px; padding: 5px 8px; min-height: 2rem;
-    display: flex; align-items: center; justify-content: center; text-align: center;
-    border-radius: 8px; font-size: 1rem; font-weight: 800; line-height: 1.15;
-    border: 1px solid transparent;
+/* ---- une petite carte colorée autour de chaque passage ---- */
+.pcard {
+    align-self: stretch; display: flex; flex-direction: column; align-items: flex-start;
+    padding: 6px 12px; border-radius: 10px; border: 2px solid #1e293b; background: #0d1320; color: #cbd5e1;
 }
-.leave-box:empty { visibility: hidden; }
-.leave-box.go   { background: rgba(16,185,129,0.18); color: #34d399; border-color: rgba(16,185,129,0.45); }
-.leave-box.now  { background: rgba(245,158,11,0.22); color: #fbbf24; border-color: rgba(245,158,11,0.55);
-                  animation: pulse 1s ease-in-out infinite; }
-.leave-box.late { background: rgba(239,68,68,0.18); color: #f87171; border-color: rgba(239,68,68,0.45); }
-.too-late { opacity: 0.4; }
+.pcard.go   { background: rgba(16,185,129,0.16); border-color: rgba(16,185,129,0.55); color: #34d399; }
+.pcard.now  { background: rgba(245,158,11,0.20); border-color: rgba(245,158,11,0.60); color: #fbbf24;
+              animation: pulse 1s ease-in-out infinite; }
+.pcard.late { background: rgba(239,68,68,0.16);  border-color: rgba(239,68,68,0.55);  color: #f87171; }
+.pcard-main { align-items: flex-end; text-align: right; }
+.pcard .clock-times { color: inherit; opacity: 0.7; }
+.pcard-note { font-size: 0.9rem; font-weight: 800; line-height: 1.1; min-height: 1.1em; margin-top: 2px; }
 @keyframes pulse { 50% { opacity: 0.55; } }
 
 /* ---- téléphone : tout tient sur un seul écran, sans défiler ---- */
@@ -146,13 +141,14 @@ body {
     .passage-label { font-size: 0.65rem; }
     .primary-time { font-size: clamp(2.8rem, 8vh, 4.2rem); }
     .primary-unit { font-size: 1.1rem; }
-    .secondary-time { font-size: 1.1rem; }
+    .secondary-time { font-size: 2.1rem; }
     .secondary-unit { font-size: 0.8rem; }
+    .pcard { padding: 3px 8px; border-radius: 8px; border-width: 1.5px; }
+    .pcard-note { font-size: 0.65rem; margin-top: 1px; }
     .clock-times { font-size: 0.65rem; }
     .sec-item .clock-times { font-size: 0.65rem; margin-left: 4px; }
     .passage-secondary { gap: 4px; }
     .passage-label { margin-bottom: 0; }
-    .leave-box { font-size: 0.72rem; min-height: 1.45rem; padding: 2px 6px; margin-top: 2px; }
 }
 </style>
 </head>
@@ -175,33 +171,39 @@ body {
         <div class="siel-display">
             <div class="passage-secondary" id="l2-sec-box">
                 <div class="sec-item">
-                    <span class="passage-label">2e Passage</span>
-                    <div class="secondary-time">
-                        <span id="l2-p2-min">--</span>
-                        <span class="secondary-unit" id="l2-p2-unit">min</span>
-                        <span class="clock-times" id="l2-p2-time">--:--</span>
+                    <span class="passage-label">3e Passage</span>
+                    <div class="pcard" id="l2-card3">
+                        <div class="secondary-time">
+                            <span id="l2-p3-min">--</span>
+                            <span class="secondary-unit" id="l2-p3-unit">min</span>
+                            <span class="clock-times" id="l2-p3-time">--:--</span>
+                        </div>
+                        <div class="pcard-note" id="l2-leave3"></div>
                     </div>
-                    <div class="leave-box" id="l2-leave2"></div>
                 </div>
                 <div class="sec-item">
-                    <span class="passage-label">3e Passage</span>
-                    <div class="secondary-time">
-                        <span id="l2-p3-min">--</span>
-                        <span class="secondary-unit" id="l2-p3-unit">min</span>
-                        <span class="clock-times" id="l2-p3-time">--:--</span>
+                    <span class="passage-label">2e Passage</span>
+                    <div class="pcard" id="l2-card2">
+                        <div class="secondary-time">
+                            <span id="l2-p2-min">--</span>
+                            <span class="secondary-unit" id="l2-p2-unit">min</span>
+                            <span class="clock-times" id="l2-p2-time">--:--</span>
+                        </div>
+                        <div class="pcard-note" id="l2-leave2"></div>
                     </div>
-                    <div class="leave-box" id="l2-leave3"></div>
                 </div>
             </div>
             <div class="divider" id="l2-divider"></div>
             <div class="passage-primary">
                 <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
-                <div class="primary-time-wrapper" id="l2-p1-wrapper">
-                    <span class="primary-time realtime" id="l2-p1-min">--</span>
-                    <span class="primary-unit realtime" id="l2-p1-unit">min</span>
+                <div class="pcard pcard-main" id="l2-card1">
+                    <div class="primary-time-wrapper" id="l2-p1-wrapper">
+                        <span class="primary-time realtime" id="l2-p1-min">--</span>
+                        <span class="primary-unit realtime" id="l2-p1-unit">min</span>
+                    </div>
+                    <div class="clock-times" id="l2-p1-time">--:--</div>
+                    <div class="pcard-note" id="l2-leave1"></div>
                 </div>
-                <div class="clock-times" id="l2-p1-time">--:--</div>
-                <div class="leave-box" id="l2-leave1"></div>
             </div>
         </div>
     </section>
@@ -221,33 +223,39 @@ body {
         <div class="siel-display">
             <div class="passage-secondary" id="l3-sec-box">
                 <div class="sec-item">
-                    <span class="passage-label">2e Passage</span>
-                    <div class="secondary-time">
-                        <span id="l3-p2-min">--</span>
-                        <span class="secondary-unit" id="l3-p2-unit">min</span>
-                        <span class="clock-times" id="l3-p2-time">--:--</span>
+                    <span class="passage-label">3e Passage</span>
+                    <div class="pcard" id="l3-card3">
+                        <div class="secondary-time">
+                            <span id="l3-p3-min">--</span>
+                            <span class="secondary-unit" id="l3-p3-unit">min</span>
+                            <span class="clock-times" id="l3-p3-time">--:--</span>
+                        </div>
+                        <div class="pcard-note" id="l3-leave3"></div>
                     </div>
-                    <div class="leave-box" id="l3-leave2"></div>
                 </div>
                 <div class="sec-item">
-                    <span class="passage-label">3e Passage</span>
-                    <div class="secondary-time">
-                        <span id="l3-p3-min">--</span>
-                        <span class="secondary-unit" id="l3-p3-unit">min</span>
-                        <span class="clock-times" id="l3-p3-time">--:--</span>
+                    <span class="passage-label">2e Passage</span>
+                    <div class="pcard" id="l3-card2">
+                        <div class="secondary-time">
+                            <span id="l3-p2-min">--</span>
+                            <span class="secondary-unit" id="l3-p2-unit">min</span>
+                            <span class="clock-times" id="l3-p2-time">--:--</span>
+                        </div>
+                        <div class="pcard-note" id="l3-leave2"></div>
                     </div>
-                    <div class="leave-box" id="l3-leave3"></div>
                 </div>
             </div>
             <div class="divider" id="l3-divider"></div>
             <div class="passage-primary">
                 <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
-                <div class="primary-time-wrapper" id="l3-p1-wrapper">
-                    <span class="primary-time realtime" id="l3-p1-min">--</span>
-                    <span class="primary-unit realtime" id="l3-p1-unit">min</span>
+                <div class="pcard pcard-main" id="l3-card1">
+                    <div class="primary-time-wrapper" id="l3-p1-wrapper">
+                        <span class="primary-time realtime" id="l3-p1-min">--</span>
+                        <span class="primary-unit realtime" id="l3-p1-unit">min</span>
+                    </div>
+                    <div class="clock-times" id="l3-p1-time">--:--</div>
+                    <div class="pcard-note" id="l3-leave1"></div>
                 </div>
-                <div class="clock-times" id="l3-p1-time">--:--</div>
-                <div class="leave-box" id="l3-leave1"></div>
             </div>
         </div>
     </section>
@@ -267,33 +275,39 @@ body {
         <div class="siel-display">
             <div class="passage-secondary" id="l5-sec-box">
                 <div class="sec-item">
-                    <span class="passage-label">2e Passage</span>
-                    <div class="secondary-time">
-                        <span id="l5-p2-min">--</span>
-                        <span class="secondary-unit" id="l5-p2-unit">min</span>
-                        <span class="clock-times" id="l5-p2-time">--:--</span>
+                    <span class="passage-label">3e Passage</span>
+                    <div class="pcard" id="l5-card3">
+                        <div class="secondary-time">
+                            <span id="l5-p3-min">--</span>
+                            <span class="secondary-unit" id="l5-p3-unit">min</span>
+                            <span class="clock-times" id="l5-p3-time">--:--</span>
+                        </div>
+                        <div class="pcard-note" id="l5-leave3"></div>
                     </div>
-                    <div class="leave-box" id="l5-leave2"></div>
                 </div>
                 <div class="sec-item">
-                    <span class="passage-label">3e Passage</span>
-                    <div class="secondary-time">
-                        <span id="l5-p3-min">--</span>
-                        <span class="secondary-unit" id="l5-p3-unit">min</span>
-                        <span class="clock-times" id="l5-p3-time">--:--</span>
+                    <span class="passage-label">2e Passage</span>
+                    <div class="pcard" id="l5-card2">
+                        <div class="secondary-time">
+                            <span id="l5-p2-min">--</span>
+                            <span class="secondary-unit" id="l5-p2-unit">min</span>
+                            <span class="clock-times" id="l5-p2-time">--:--</span>
+                        </div>
+                        <div class="pcard-note" id="l5-leave2"></div>
                     </div>
-                    <div class="leave-box" id="l5-leave3"></div>
                 </div>
             </div>
             <div class="divider" id="l5-divider"></div>
             <div class="passage-primary">
                 <span class="passage-label" style="color: #cbd5e1;">Prochain Passage</span>
-                <div class="primary-time-wrapper" id="l5-p1-wrapper">
-                    <span class="primary-time realtime" id="l5-p1-min">--</span>
-                    <span class="primary-unit realtime" id="l5-p1-unit">min</span>
+                <div class="pcard pcard-main" id="l5-card1">
+                    <div class="primary-time-wrapper" id="l5-p1-wrapper">
+                        <span class="primary-time realtime" id="l5-p1-min">--</span>
+                        <span class="primary-unit realtime" id="l5-p1-unit">min</span>
+                    </div>
+                    <div class="clock-times" id="l5-p1-time">--:--</div>
+                    <div class="pcard-note" id="l5-leave1"></div>
                 </div>
-                <div class="clock-times" id="l5-p1-time">--:--</div>
-                <div class="leave-box" id="l5-leave1"></div>
             </div>
         </div>
     </section>
@@ -477,8 +491,21 @@ function render() {
     const rtAllowed = liveOk || jsonOk;
 
     CARDS.forEach(key => {
-        const list = (source[key] || [])
-            .filter(d => d.t * 1000 > now - 30000)
+        let items = (source[key] || []).filter(d => d.t * 1000 > now - 30000);
+
+        // Données récentes épuisées ou périmées (ex. horaires.json pas mis à jour depuis des heures) :
+        // on complète avec les horaires théoriques, disponibles sur ~30 h.
+        if (items.length < 3 && payload && payload.theorique && payload.theorique[key]) {
+            const th = payload.theorique[key];
+            const lignes = payload.lignes || DEFAULT_LIGNES;
+            const lastT = items.length ? items[items.length - 1].t : 0;
+            const theo = mergeCard(lignes[key], th.departs,
+                { updates: [], cancelled: new Set(), seen: new Set() }, th.quais, now)
+                .filter(d => d.t > lastT);
+            items = items.concat(theo).slice(0, NB_DEPARTS);
+        }
+
+        const list = items
             .map(d => ({
                 minutesLeft: Math.max(0, Math.round((d.t * 1000 - now) / 60000)),
                 timeFormatted: fmtClock(d.t),
@@ -500,19 +527,18 @@ function leaveState(p, walk) {
     return { cls: 'go', text: `Partir dans ${wait} min` };
 }
 
-function setLeave(boxId, dimEl, p, walk) {
+function setLeave(key, n, p, walk) {
     const st = leaveState(p, walk);
-    const box = document.getElementById(boxId);
-    box.className = 'leave-box ' + st.cls;
-    box.textContent = st.text;
-    dimEl.classList.toggle('too-late', st.cls === 'late');
+    const card = document.getElementById(`${key}-card${n}`);
+    card.className = 'pcard' + (n === 1 ? ' pcard-main' : '') + (st.cls ? ' ' + st.cls : '');
+    document.getElementById(`${key}-leave${n}`).textContent = st.text;
 }
 
 function updateCardUI(key, p1, p2, p3) {
     const walk = WALK_MIN[key] || 0;
-    setLeave(`${key}-leave1`, document.getElementById(`${key}-p1-wrapper`), p1, walk);
-    setLeave(`${key}-leave2`, document.getElementById(`${key}-p2-min`).parentElement, p2, walk);
-    setLeave(`${key}-leave3`, document.getElementById(`${key}-p3-min`).parentElement, p3, walk);
+    setLeave(key, 1, p1, walk);
+    setLeave(key, 2, p2, walk);
+    setLeave(key, 3, p3, walk);
     const statusBadge = document.getElementById(`status-${key}`);
     const p1MinEl = document.getElementById(`${key}-p1-min`);
     const p1UnitEl = document.getElementById(`${key}-p1-unit`);
