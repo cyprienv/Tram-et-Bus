@@ -258,7 +258,7 @@ const RT_URL = new URLSearchParams(location.search).get('rt') ||
     'https://proxy.transport.data.gouv.fr/resource/naolib-nantes-gtfs-rt-trip-update';
 const JSON_STALE_MS = 15 * 60 * 1000;   // JSON du workflow considéré périmé au-delà
 const RT_STALE_MS = 3 * 60 * 1000;      // flux direct considéré périmé au-delà
-const RT_REFRESH_MS = 30000;
+const RT_REFRESH_MS = 60000;      // 1 requête/min (30 s provoquait des erreurs 429)
 const NB_DEPARTS = 8;
 
 // Temps de marche depuis chez toi jusqu'à chaque arrêt (en minutes).
@@ -380,7 +380,7 @@ async function loadLive() {
         live = { fetchedAt: now, feedMs: rt.feedTs ? rt.feedTs * 1000 : now, data };
     } catch (err) {
         console.warn('Flux temps réel direct indisponible, JSON utilisé :', err.message);
-        rtSkip = 3;                      // on réessaie dans ~2 min
+        rtSkip = 2;                      // après une erreur (ex. 429), on patiente ~2 min
     }
     render();
 }
